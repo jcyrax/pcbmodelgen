@@ -26,7 +26,7 @@ unit = 1e-3; % all length in mm
 
 %% setup FDTD parameter & excitation function
 % frequency range of interest
-f_start =  0;
+f_start =  1e9;
 f_stop  =  4e9;
 f0 = 0.5*(f_start+f_stop);
 fc = f_stop - f0;
