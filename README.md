@@ -8,6 +8,11 @@ Then call from Octave script to import model into openEMS structures.
 use them as is or modify before adding to simulation structure.
 
 ## Installation
+### Dependencies
+1) TinyXML2 https://github.com/leethomason/tinyxml2 (packages available)
+2) TCLAP http://tclap.sourceforge.net/ (packages available)
+3) Boost (format) 
+### Build
 Installation using cmake. 
 1) Create build directory.
 2) cmake <CMakeLists.txt>
