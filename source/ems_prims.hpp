@@ -41,6 +41,12 @@ public:
 };
 
 
+#ifndef M_PI
+#define M_PI        3.14159265358979323846
+#define M_PI_2      (3.14159265358979323846 / 2.0)
+#endif
+
+
 double deg_to_radian(double degrees);
 std::complex<double> rot_vector(std::complex<double> Vect, double RotAngle);
 bool IsClockWiseOrder(std::vector<std::complex<double>>& Data);

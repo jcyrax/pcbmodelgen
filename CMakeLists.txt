@@ -47,7 +47,10 @@ set( SRC
 SET( INCLUDE_DIRS
      source/
      ${TINYXML2_INCLUDE_DIR}
+     ${TCLAP_INCLUDE_DIR}
+     ${BOOST_INCLUDEDIR}
     )
+
 
 include_directories(${INCLUDE_DIRS})
 
@@ -58,7 +61,7 @@ SET( CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS}" )
 
 add_executable(pcbmodelgen ${SRC})
 
-target_link_libraries(pcbmodelgen tinyxml2)
+target_link_libraries(pcbmodelgen ${TINYXML2_LIBRARY})
 
 install(TARGETS pcbmodelgen
         RUNTIME DESTINATION bin)
