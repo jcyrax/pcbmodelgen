@@ -13,12 +13,21 @@ use them as is or modify before adding to simulation structure.
 2) TCLAP http://tclap.sourceforge.net/ (packages available)
 3) Boost (format) 
 ### Build
-Installation using cmake. 
-1) Create build directory.
-2) cmake <CMakeLists.txt>
-3) make
-4) make install
+#### Linux
+Download package and execute from root:
+```
+mkdir build
+cd build
+cmake ../
+make
+make install
+```
 
 ## Usage
 Check out examples directory.
-
+Execute from examples directory:
+```
+./generate_model.sh
+```
+for basic example of usage. It will show model and after
+exit from 3D viewer openEMS will run the simulation and present results.
