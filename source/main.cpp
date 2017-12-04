@@ -32,7 +32,7 @@
 
 
 
-#define s_VERSION                           "0.1"
+#define s_VERSION                           "0.2"
 
 /*
 */

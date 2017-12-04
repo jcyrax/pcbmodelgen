@@ -76,6 +76,9 @@ private:
 
     void FilterMesh(std::set<double>& Mesh, double MinGap);
     void SmoothMesh(std::set<double>& Mesh, double MaxGap);
+
+    void MeshTransition(std::set<double>& Mesh, double MaxGap, double DLeft, double DRight, std::set<double>::iterator it0,
+                        std::set<double>::iterator it1);
 };
 
 

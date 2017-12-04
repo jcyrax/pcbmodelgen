@@ -223,16 +223,194 @@ MeshLines PCB_EMS_Model::GetOmptimalMesh()
         mesh.Z.insert(m_MeshParams.manual_mesh.Z.begin(), m_MeshParams.manual_mesh.Z.end());
     }
 
+    // Verify mesh quality - print warnings if deviations
+    for(size_t i = 0; i < 3; ++i)
+    {
+        std::set<double> mesh_axis;
+        double max_gap, min_gap;
+        switch(i)
+        {
+        case 0:
+            mesh_axis = mesh.X;
+            max_gap = m_MeshParams.automatic_mesh.max_cell_size.X;
+            min_gap = m_MeshParams.automatic_mesh.min_cell_size.X;
+            break;
+        case 1:
+            mesh_axis = mesh.Y;
+            max_gap = m_MeshParams.automatic_mesh.max_cell_size.Y;
+            min_gap = m_MeshParams.automatic_mesh.min_cell_size.Y;
+            break;
+        case 2:
+        default:
+            mesh_axis = mesh.Z;
+            max_gap = m_MeshParams.automatic_mesh.max_cell_size.Z;
+            min_gap = m_MeshParams.automatic_mesh.min_cell_size.Z;
+            break;
+        }
+
+        std::set<double>::iterator it0 = mesh_axis.begin();
+        std::set<double>::iterator it1 = it0;
+        it1++;
+        std::set<double>::iterator it2 = it1;
+        it2++;
+
+        while(it2 != mesh_axis.end())
+        {
+            double size_left = *it1 - *it0;
+            double size_right = *it2 - *it1;
+            double gap_ratio;
+            if(size_left < size_right)
+            {
+                gap_ratio = size_right / size_left;
+            }
+            else
+            {
+                gap_ratio = size_left / size_right;
+            }
+            if(gap_ratio > m_MeshParams.automatic_mesh.smth_neighbor_size_diff)
+            {
+                printf("WARNING: mesh gap ratio deviation. Configured max ratio %f, but actual ratio %f\n",
+                       m_MeshParams.automatic_mesh.smth_neighbor_size_diff,
+                       gap_ratio);
+            }
+            if(size_left > max_gap || size_right > max_gap)
+            {
+                printf("ERROR: mesh gap size too large. Configured max size %f, but actual size %f\n",
+                       max_gap, size_left > size_right ? size_left : size_right);
+            }
+            if(size_left < min_gap || size_right < min_gap)
+            {
+                printf("ERROR: mesh gap size too small. Configured min size %f, but actual size %f\n",
+                       min_gap, size_left < size_right ? size_left : size_right);
+            }
+
+            it2++;
+            it1++;
+            it0++;
+        }
+    }
+
     return mesh;
+}
+
+void PCB_EMS_Model::MeshTransition(std::set<double>& Mesh, double MaxGap, double DLeft, double DRight,
+                                   std::set<double>::iterator it0,
+                                   std::set<double>::iterator it1)
+{
+    double delta = *it1 - *it0;
+    bool skip_second = false;
+
+    double mesh_neighbor_mul = m_MeshParams.automatic_mesh.smth_neighbor_size_diff;
+    mesh_neighbor_mul -= mesh_neighbor_mul * 0.0001;
+    if(mesh_neighbor_mul < 1.0) mesh_neighbor_mul = 1.0;
+
+    while(DLeft > DRight * mesh_neighbor_mul)
+    {
+        skip_second = true;
+        double needed_size = mesh_neighbor_mul * DRight;
+        if(needed_size > MaxGap) needed_size = MaxGap;
+        double needed_space = needed_size * 2;
+
+        double new_mesh_line;
+        if(delta >= needed_space)
+        {
+            new_mesh_line = *it1 - needed_size;
+            DRight = *it1 - new_mesh_line;
+            it1 = Mesh.insert(new_mesh_line).first;
+        }
+        else
+        {
+            if(delta * mesh_neighbor_mul / 2 >= DRight)
+            {
+                new_mesh_line = *it0 + (delta / 2.0);
+                DRight = *it1 - new_mesh_line;
+                it1 = Mesh.insert(new_mesh_line).first;
+            }
+            return;
+        }
+        delta = *it1 - *it0;
+    }
+    while(!skip_second && DLeft < DRight / mesh_neighbor_mul)
+    {
+        double needed_size = mesh_neighbor_mul * DLeft;
+        if(needed_size > MaxGap) needed_size = MaxGap;
+        double needed_space = needed_size * 2;
+
+        if(delta >= needed_space)
+        {
+            double new_mesh_line = *it0 + needed_size;
+            DLeft = new_mesh_line - *it0;
+            it0 = Mesh.insert(new_mesh_line).first;
+        }
+        else
+        {
+            if(delta * mesh_neighbor_mul / 2 >= DLeft)
+            {
+                double new_mesh_line = *it0 + (delta / 2.0);
+                DLeft = new_mesh_line - *it0;
+                it0 = Mesh.insert(new_mesh_line).first;
+            }
+            return;
+        }
+        delta = *it1 - *it0;
+    }
+
+    // symmetry
+    while(1)
+    {
+        delta = *it1 - *it0;
+
+        double needed_size_left = mesh_neighbor_mul * DLeft;
+        double needed_size_right = mesh_neighbor_mul * DRight;
+        if(needed_size_left > MaxGap) needed_size_left = MaxGap;
+        if(needed_size_right > MaxGap) needed_size_right = MaxGap;
+
+        double needed_space = (needed_size_left + needed_size_right) * 2;
+
+        if(delta >= needed_space)
+        {
+            double new_mesh_line_left = *it0 + needed_size_left;
+            double new_mesh_line_right = *it1 - needed_size_right;
+            DLeft = new_mesh_line_left - *it0;
+            DRight = *it1 - new_mesh_line_right;
+
+            it0 = Mesh.insert(new_mesh_line_left).first;
+            it1 = Mesh.insert(new_mesh_line_right).first;
+        }
+        else
+        {
+            double cell_size = (DLeft + DRight) / 2;
+            size_t cell_count;
+
+            if(cell_size > MaxGap)
+            {
+                cell_size = MaxGap;
+            }
+
+            cell_count = std::floor(delta / cell_size);
+            cell_size = delta / cell_count;
+            if(cell_size > MaxGap)
+            {
+                cell_size = MaxGap;
+                cell_count = std::ceil(delta / cell_size);
+                cell_size = delta / cell_count;
+            }
+
+            for(size_t i = 1; i < cell_count; i++)
+            {
+                Mesh.insert(*it0 + i * cell_size);
+            }
+            break;
+        }
+    }
 }
 
 void PCB_EMS_Model::SmoothMesh(std::set<double>& Mesh, double MaxGap)
 {
-    std::set<double>::iterator cur = Mesh.begin();
     std::set<double>::iterator prev;
 
     double mesh_neighbor_mul = m_MeshParams.automatic_mesh.smth_neighbor_size_diff;
-    if(mesh_neighbor_mul < 1.1) mesh_neighbor_mul = 1.1;
+    if(mesh_neighbor_mul < 1.0) mesh_neighbor_mul = 1.0;
     // make size transitions smooth
     if(Mesh.size() >= 3)
     {
@@ -244,56 +422,33 @@ void PCB_EMS_Model::SmoothMesh(std::set<double>& Mesh, double MaxGap)
 
         while(it2 != Mesh.end())
         {
-            if(mesh_neighbor_mul * (*it2 - *it1) < *it1 - *it0)
+            double delta_left = *it1 - *it0;
+            double delta_right = *it2 - *it1;
+            if(delta_left > delta_right * mesh_neighbor_mul)
             {
-                Mesh.insert(*it0 + ((*it1 - *it0) / 2.0));
-                it0 = it1;
-                it0--;
-            }
-            else if(mesh_neighbor_mul * (*it1 - *it0) < *it2 - *it1)
-            {
-                std::set<double>::iterator it2_loop = it2;
+                double previous_delta;
+                std::set<double>::iterator prev = it0;
+                prev--;
+                if(it0 != Mesh.begin() && prev != Mesh.begin()) previous_delta = *it0 - *prev;
+                else previous_delta = std::numeric_limits<double>::max();
 
-                while(mesh_neighbor_mul * (*it1 - *it0) < *it2_loop - *it1)
-                {
-                    Mesh.insert(*it1 + ((*it2_loop - *it1) / 2.0));
-                    it2_loop = it1;
-                    it2_loop++;
-                }
-                // skip ahead to first started division of cells
-                it1 = it2;
-                it1--;
-                it0 = it1;
-                it0--;
+                MeshTransition(Mesh, MaxGap, previous_delta, delta_right, it0, it1);
             }
-            else
+            else if(delta_left * mesh_neighbor_mul < delta_right)
             {
-                it2++;
-                it1++;
-                it0++;
-            }
-        }
-    }
+                double next_delta;
+                std::set<double>::iterator next = it2;
+                next++;
+                if(it2 != Mesh.end() && next != Mesh.end()) next_delta = *next - *it2;
+                else next_delta = std::numeric_limits<double>::max();
 
-    // enforce max mesh step
-    for(size_t index = 0; cur != Mesh.end(); ++index, ++cur)
-    {
-        if(index < 1)
-        {
-            continue;
-        }
-        // setup iterators
-        prev = cur;
-        prev--;
-
-        if(*cur - *prev > MaxGap)
-        {
-            size_t insert_count = (*cur - *prev) / MaxGap;
-            double diff = (*cur - *prev) / (insert_count + 1);
-            for(size_t i = 0; i < insert_count; ++i)
-            {
-                Mesh.insert(*prev + diff * (i + 1));
+                MeshTransition(Mesh, MaxGap, delta_left, next_delta, it1, it2);
             }
+            it2++;
+            it1 = it2;
+            it1--;
+            it0 = it1;
+            it0--;
         }
     }
 }
