@@ -150,7 +150,7 @@ std::string PCB_EMS_Model::GetModelScript()
     return str;
 }
 
-MeshLines PCB_EMS_Model::GetOmptimalMesh()
+pems::MeshLines PCB_EMS_Model::GetOmptimalMesh()
 {
     MeshLines mesh;
 
@@ -221,73 +221,6 @@ MeshLines PCB_EMS_Model::GetOmptimalMesh()
         mesh.X.insert(m_MeshParams.manual_mesh.X.begin(), m_MeshParams.manual_mesh.X.end());
         mesh.Y.insert(m_MeshParams.manual_mesh.Y.begin(), m_MeshParams.manual_mesh.Y.end());
         mesh.Z.insert(m_MeshParams.manual_mesh.Z.begin(), m_MeshParams.manual_mesh.Z.end());
-    }
-
-    // Verify mesh quality - print warnings if deviations
-    for(size_t i = 0; i < 3; ++i)
-    {
-        std::set<double> mesh_axis;
-        double max_gap, min_gap;
-        switch(i)
-        {
-        case 0:
-            mesh_axis = mesh.X;
-            max_gap = m_MeshParams.automatic_mesh.max_cell_size.X;
-            min_gap = m_MeshParams.automatic_mesh.min_cell_size.X;
-            break;
-        case 1:
-            mesh_axis = mesh.Y;
-            max_gap = m_MeshParams.automatic_mesh.max_cell_size.Y;
-            min_gap = m_MeshParams.automatic_mesh.min_cell_size.Y;
-            break;
-        case 2:
-        default:
-            mesh_axis = mesh.Z;
-            max_gap = m_MeshParams.automatic_mesh.max_cell_size.Z;
-            min_gap = m_MeshParams.automatic_mesh.min_cell_size.Z;
-            break;
-        }
-
-        std::set<double>::iterator it0 = mesh_axis.begin();
-        std::set<double>::iterator it1 = it0;
-        it1++;
-        std::set<double>::iterator it2 = it1;
-        it2++;
-
-        while(it2 != mesh_axis.end())
-        {
-            double size_left = *it1 - *it0;
-            double size_right = *it2 - *it1;
-            double gap_ratio;
-            if(size_left < size_right)
-            {
-                gap_ratio = size_right / size_left;
-            }
-            else
-            {
-                gap_ratio = size_left / size_right;
-            }
-            if(gap_ratio > m_MeshParams.automatic_mesh.smth_neighbor_size_diff)
-            {
-                printf("WARNING: mesh gap ratio deviation. Configured max ratio %f, but actual ratio %f\n",
-                       m_MeshParams.automatic_mesh.smth_neighbor_size_diff,
-                       gap_ratio);
-            }
-            if(size_left > max_gap || size_right > max_gap)
-            {
-                printf("ERROR: mesh gap size too large. Configured max size %f, but actual size %f\n",
-                       max_gap, size_left > size_right ? size_left : size_right);
-            }
-            if(size_left < min_gap || size_right < min_gap)
-            {
-                printf("ERROR: mesh gap size too small. Configured min size %f, but actual size %f\n",
-                       min_gap, size_left < size_right ? size_left : size_right);
-            }
-
-            it2++;
-            it1++;
-            it0++;
-        }
     }
 
     return mesh;
@@ -486,12 +419,26 @@ std::string PCB_EMS_Model::GetMeshScript()
     MeshLines mesh = GetOmptimalMesh();
 
     // generate mesh data script
-    std::string str = "function retval = kicad_pcb_mesh()\n";
+    std::string str;
+    std::vector<double> gaps[3];
+    std::vector<double> ratios[3];
 
+    double previous;
+
+    str += "function retval = kicad_pcb_mesh()\n";
     str += "mesh.x = [ ";
     auto it = mesh.X.begin();
     while(it != mesh.X.end())
     {
+        if(it == mesh.X.begin())
+        {
+            previous = *it;
+        }
+        else
+        {
+            gaps[0].push_back(*it - previous);
+            previous = *it;
+        }
         str += std::to_string(*it);
         str += " ";
         it++;
@@ -502,6 +449,15 @@ std::string PCB_EMS_Model::GetMeshScript()
     it = mesh.Y.begin();
     while(it != mesh.Y.end())
     {
+        if(it == mesh.Y.begin())
+        {
+            previous = *it;
+        }
+        else
+        {
+            gaps[1].push_back(*it - previous);
+            previous = *it;
+        }
         str += std::to_string(*it);
         str += " ";
         it++;
@@ -512,6 +468,15 @@ std::string PCB_EMS_Model::GetMeshScript()
     it = mesh.Z.begin();
     while(it != mesh.Z.end())
     {
+        if(it == mesh.Z.begin())
+        {
+            previous = *it;
+        }
+        else
+        {
+            gaps[2].push_back(*it - previous);
+            previous = *it;
+        }
         str += std::to_string(*it);
         str += " ";
         it++;
@@ -520,6 +485,139 @@ std::string PCB_EMS_Model::GetMeshScript()
 
     str += "retval = mesh;\n";
     str += "endfunction\n";
+
+    str += "\n";
+    str += "% Mesh gap sizes:\n";
+
+    for(size_t i = 0; i < 3; ++i)
+    {
+        switch(i)
+        {
+        case 0:
+            str += "% X:\n% ";
+            break;
+        case 1:
+            str += "% Y:\n% ";
+            break;
+        case 2:
+            str += "% Z:\n% ";
+            break;
+        }
+        for(size_t k = 0; k < gaps[i].size(); ++k)
+        {
+            if(k != 0 && k % 10 == 0)
+            {
+                str += "\n% ";
+            }
+            str += std::to_string(gaps[i][k]) + " ";
+        }
+        str += "\n";
+    }
+
+    str += "\n";
+    str += "% Mesh gap ratios:\n";
+
+    for(size_t i = 0; i < 3; ++i)
+    {
+        switch(i)
+        {
+        case 0:
+            str += "% X:\n% ";
+            break;
+        case 1:
+            str += "% Y:\n% ";
+            break;
+        case 2:
+            str += "% Z:\n% ";
+            break;
+        }
+        for(size_t k = 1; k < gaps[i].size(); ++k)
+        {
+            double gap_ratio;
+            if(gaps[i][k - 1] < gaps[i][k])
+            {
+                gap_ratio = gaps[i][k] / gaps[i][k - 1];
+            }
+            else
+            {
+                gap_ratio = gaps[i][k - 1] / gaps[i][k];
+            }
+
+            str += std::to_string(gap_ratio) + " ";
+            if(k != 0 && k % 10 == 0)
+            {
+                str += "\n% ";
+            }
+        }
+        str += "\n";
+    }
+
+    // Verify mesh quality - print warnings if deviations
+    for(size_t i = 0; i < 3; ++i)
+    {
+        std::set<double> mesh_axis;
+        double max_gap, min_gap;
+        switch(i)
+        {
+        case 0:
+            mesh_axis = mesh.X;
+            max_gap = m_MeshParams.automatic_mesh.max_cell_size.X;
+            min_gap = m_MeshParams.automatic_mesh.min_cell_size.X;
+            break;
+        case 1:
+            mesh_axis = mesh.Y;
+            max_gap = m_MeshParams.automatic_mesh.max_cell_size.Y;
+            min_gap = m_MeshParams.automatic_mesh.min_cell_size.Y;
+            break;
+        case 2:
+        default:
+            mesh_axis = mesh.Z;
+            max_gap = m_MeshParams.automatic_mesh.max_cell_size.Z;
+            min_gap = m_MeshParams.automatic_mesh.min_cell_size.Z;
+            break;
+        }
+
+        std::set<double>::iterator it0 = mesh_axis.begin();
+        std::set<double>::iterator it1 = it0;
+        it1++;
+        std::set<double>::iterator it2 = it1;
+        it2++;
+
+        while(it2 != mesh_axis.end())
+        {
+            double size_left = *it1 - *it0;
+            double size_right = *it2 - *it1;
+            double gap_ratio;
+            if(size_left < size_right)
+            {
+                gap_ratio = size_right / size_left;
+            }
+            else
+            {
+                gap_ratio = size_left / size_right;
+            }
+            if(gap_ratio > m_MeshParams.automatic_mesh.smth_neighbor_size_diff)
+            {
+                printf("WARNING: mesh gap ratio deviation. Configured max ratio %f, but actual ratio %f\n",
+                       m_MeshParams.automatic_mesh.smth_neighbor_size_diff,
+                       gap_ratio);
+            }
+            if(size_left > max_gap || size_right > max_gap)
+            {
+                printf("ERROR: mesh gap size too large. Configured max size %f, but actual size %f\n",
+                       max_gap, size_left > size_right ? size_left : size_right);
+            }
+            if(size_left < min_gap || size_right < min_gap)
+            {
+                printf("ERROR: mesh gap size too small. Configured min size %f, but actual size %f\n",
+                       min_gap, size_left < size_right ? size_left : size_right);
+            }
+
+            it2++;
+            it1++;
+            it0++;
+        }
+    }
 
     return str;
 }
