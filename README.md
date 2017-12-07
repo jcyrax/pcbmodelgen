@@ -11,7 +11,6 @@ use them as is or modify before adding to simulation structure.
 ### Dependencies
 1) TinyXML2 https://github.com/leethomason/tinyxml2 (packages available)
 2) TCLAP http://tclap.sourceforge.net/ (packages available)
-3) Boost (format) 
 ### Build
 #### Linux
 Download package and execute from root:
