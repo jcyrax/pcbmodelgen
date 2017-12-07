@@ -15,11 +15,12 @@ use them as is or modify before adding to simulation structure.
 #### Linux
 Download package and execute from root:
 ```
+sudo apt-get install libtinyxml2-dev libtclap-dev
 mkdir build
 cd build
 cmake ../
 make
-make install
+sudo make install
 ```
 
 ## Usage
