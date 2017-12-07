@@ -20,7 +20,6 @@
 #include "ems.hpp"
 
 #include <tinyxml2.h>
-#include "boost/format.hpp"
 #include <sstream>
 #include <iostream>
 #include <iomanip>
@@ -491,25 +490,44 @@ std::string PCB_EMS_Model::GetMeshScript()
 
     for(size_t i = 0; i < 3; ++i)
     {
+        double max_gap, min_gap;
         switch(i)
         {
         case 0:
             str += "% X:\n% ";
+            max_gap = m_MeshParams.automatic_mesh.max_cell_size.X;
+            min_gap = m_MeshParams.automatic_mesh.min_cell_size.X;
             break;
         case 1:
             str += "% Y:\n% ";
+            max_gap = m_MeshParams.automatic_mesh.max_cell_size.Y;
+            min_gap = m_MeshParams.automatic_mesh.min_cell_size.Y;
             break;
         case 2:
             str += "% Z:\n% ";
+            max_gap = m_MeshParams.automatic_mesh.max_cell_size.Z;
+            min_gap = m_MeshParams.automatic_mesh.min_cell_size.Z;
             break;
         }
+        std::vector<size_t> bad_gap_indices;
         for(size_t k = 0; k < gaps[i].size(); ++k)
         {
             if(k != 0 && k % 10 == 0)
             {
+                for(size_t j = 0; j < bad_gap_indices.size(); ++j)
+                {
+                    if(j == 0)
+                    {
+                        str += "\tWARNING mesh gap size violate configuration at columns: ";
+                    }
+                    str += std::to_string(bad_gap_indices[j]) + " ";
+                }
                 str += "\n% ";
+                bad_gap_indices.clear();
             }
             str += std::to_string(gaps[i][k]) + " ";
+            if(gaps[i][k] > max_gap) bad_gap_indices.push_back(k % 10);
+            if(gaps[i][k] < min_gap) bad_gap_indices.push_back(k % 10);
         }
         str += "\n";
     }
@@ -531,6 +549,8 @@ std::string PCB_EMS_Model::GetMeshScript()
             str += "% Z:\n% ";
             break;
         }
+        double configured_gap_ratio = m_MeshParams.automatic_mesh.smth_neighbor_size_diff;
+        std::vector<size_t> bad_gap_indices;
         for(size_t k = 1; k < gaps[i].size(); ++k)
         {
             double gap_ratio;
@@ -544,13 +564,27 @@ std::string PCB_EMS_Model::GetMeshScript()
             }
 
             str += std::to_string(gap_ratio) + " ";
-            if(k != 0 && k % 10 == 0)
+            if(gap_ratio > configured_gap_ratio) bad_gap_indices.push_back((k - 1) % 10);
+
+            if(k % 10 == 0)
             {
+                for(size_t j = 0; j < bad_gap_indices.size(); ++j)
+                {
+                    if(j == 0)
+                    {
+                        str += "\tWARNING mesh gap ratio violate configuration at columns: ";
+                    }
+                    str += std::to_string(bad_gap_indices[j]) + " ";
+                }
                 str += "\n% ";
+                bad_gap_indices.clear();
             }
         }
         str += "\n";
     }
+
+
+    bool warning = false;
 
     // Verify mesh quality - print warnings if deviations
     for(size_t i = 0; i < 3; ++i)
@@ -601,22 +635,30 @@ std::string PCB_EMS_Model::GetMeshScript()
                 printf("WARNING: mesh gap ratio deviation. Configured max ratio %f, but actual ratio %f\n",
                        m_MeshParams.automatic_mesh.smth_neighbor_size_diff,
                        gap_ratio);
+                warning = true;
             }
             if(size_left > max_gap || size_right > max_gap)
             {
                 printf("ERROR: mesh gap size too large. Configured max size %f, but actual size %f\n",
                        max_gap, size_left > size_right ? size_left : size_right);
+                warning = true;
             }
             if(size_left < min_gap || size_right < min_gap)
             {
                 printf("ERROR: mesh gap size too small. Configured min size %f, but actual size %f\n",
                        min_gap, size_left < size_right ? size_left : size_right);
+                warning = true;
             }
 
             it2++;
             it1++;
             it0++;
         }
+    }
+
+    if(warning)
+    {
+        printf("Check generated mesh file for detailed warning information\n");
     }
 
     return str;

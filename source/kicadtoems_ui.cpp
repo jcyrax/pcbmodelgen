@@ -25,13 +25,6 @@
 
 using namespace kicad_to_ems;
 
-const char* octave_script_header =
-"%                                                                                       \n\
-% Exported functions:                                                                    \n\
-% function retval = kicad_pcb_mesh() - returns structure with mesh lines for model       \n\
-% function retval = kicad_pcb_model(CSX) - return CSX structure with PCB model PCB       \n\
-1;                                                                                       \n\
-";
 
 std::vector<char> ReadFile(const char* filename);
 

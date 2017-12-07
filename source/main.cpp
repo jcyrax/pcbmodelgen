@@ -32,7 +32,7 @@
 
 
 
-#define s_VERSION                           "0.2"
+#define s_VERSION                           "0.2.0"
 
 /*
 */
@@ -47,6 +47,8 @@ int main(int argc, char* argv[])
     std::string model_file;
     std::string xml_inject_file;
     std::string pcb_file;
+
+    printf("pcbmodelgen %s\n", s_VERSION);
 
     try
     {

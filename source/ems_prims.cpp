@@ -19,7 +19,6 @@
 
 #include "misc.hpp"
 #include "ems_prims.hpp"
-#include "boost/format.hpp"
 #include <iostream>
 #include <iomanip>
 #include <cassert>
@@ -51,7 +50,6 @@ ExtrudedPolygon::ExtrudedPolygon(std::vector<std::complex<double>>& Outline, dou
 
 std::string ExtrudedPolygon::GetCSX_Script()
 {
-    using boost::format;
     std::string str_points;
     std::string str_full;
     size_t points = m_PolyOutline.size();
@@ -64,24 +62,46 @@ std::string ExtrudedPolygon::GetCSX_Script()
     {
         if(i > 0 && last_point == m_PolyOutline[i]) continue;
         last_point = m_PolyOutline[i];
-        format fmt = format("p(1,%1%)=%2$.6f;p(2,%1%)=%3$.6f;\n") % (p + 1) % m_PolyOutline[i].real() % m_PolyOutline[i].imag();
-        str_points += fmt.str();
+
+        size_t str_len = snprintf(nullptr, 0, "p(1,%ld)=%.6f;p(2,%ld)=%.6f;\n", (p + 1), m_PolyOutline[i].real(), (p + 1), m_PolyOutline[i].imag());
+        if(str_len <= 0) throw 11;
+        str_len++;
+        char buffer[str_len] = { 0 };
+        snprintf(buffer, str_len, "p(1,%ld)=%.6f;p(2,%ld)=%.6f;\n", (p + 1), m_PolyOutline[i].real(), (p + 1), m_PolyOutline[i].imag());
+        str_points += buffer;
         p++;
     }
 
-    format fmt = format("p=zeros(2,%1%);\n") % p;
-    str_full += fmt.str();
+
+    size_t str_len = snprintf(nullptr, 0, "p=zeros(2,%ld);\n", p);
+    if(str_len <= 0) throw 11;
+    str_len++;
+    char buffer[str_len] = { 0 };
+    snprintf(buffer, str_len, "p=zeros(2,%ld);\n", p);
+    str_full += buffer;
+
     str_full += str_points;
 
     if(m_Thickness == 0)
     {
-        fmt = format("CSX = AddPolygon(CSX, '%1%', %3%, 2, %2%, p);\n") % m_MaterialName % m_Z_Height % m_Priority;
+        size_t str_len = snprintf(nullptr, 0, "CSX = AddPolygon(CSX, '%s', %ld, 2, %.6f, p);\n", m_MaterialName.c_str(), m_Priority, m_Z_Height);
+        if(str_len <= 0) throw 11;
+        str_len++;
+        char buffer[str_len] = { 0 };
+        snprintf(buffer, str_len, "CSX = AddPolygon(CSX, '%s', %ld, 2, %.6f, p);\n", m_MaterialName.c_str(), m_Priority, m_Z_Height);
+        str_full += buffer;
     }
     else
     {
-        fmt = format("CSX = AddLinPoly(CSX, '%1%', %4%, 2, %2%, p, %3%);\n") % m_MaterialName % m_Z_Height % m_Thickness % m_Priority;
+        size_t str_len = snprintf(nullptr, 0, "CSX = AddLinPoly(CSX, '%s', %ld, 2, %.6f, p, %.6f);\n",
+                                  m_MaterialName.c_str(), m_Priority, m_Z_Height, m_Thickness);
+        if(str_len <= 0) throw 11;
+        str_len++;
+        char buffer[str_len] = { 0 };
+        snprintf(buffer, str_len, "CSX = AddLinPoly(CSX, '%s', %ld, 2, %.6f, p, %.6f);\n",
+                                  m_MaterialName.c_str(), m_Priority, m_Z_Height, m_Thickness);
+        str_full += buffer;
     }
-    str_full += fmt.str();
 
     return str_full;
 }
@@ -256,7 +276,6 @@ Zone::Zone(std::vector<std::complex<double>>& OutlineCenterPts,
              m_Approx(Approx),
              m_Material(Material)
 {
-    using boost::format;
 
     if(OutlineCenterPts.size() < 3) return;
 

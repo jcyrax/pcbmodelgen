@@ -4,8 +4,6 @@ cmake_minimum_required(VERSION 2.8)
 project(pcbmodelgen)
 
 #Dependencies
-find_package(Boost REQUIRED)
-
 find_path(TINYXML2_INCLUDE_DIR
   NAMES tinyxml2.h
   PATHS ${TINYXML2_PKGCONF_INCLUDE_DIRS}
@@ -48,7 +46,6 @@ SET( INCLUDE_DIRS
      source/
      ${TINYXML2_INCLUDE_DIR}
      ${TCLAP_INCLUDE_DIR}
-     ${BOOST_INCLUDEDIR}
     )
 
 
@@ -57,7 +54,6 @@ include_directories(${INCLUDE_DIRS})
 SET(GCC_COVERAGE_COMPILE_FLAGS "-std=c++11")
 
 SET( CMAKE_CXX_FLAGS  "${CMAKE_CXX_FLAGS} ${GCC_COVERAGE_COMPILE_FLAGS}" )
-#SET( CMAKE_EXE_LINKER_FLAGS  "${CMAKE_EXE_LINKER_FLAGS} ${GCC_COVERAGE_LINK_FLAGS}" )
 
 add_executable(pcbmodelgen ${SRC})
 
