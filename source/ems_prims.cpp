@@ -66,7 +66,7 @@ std::string ExtrudedPolygon::GetCSX_Script()
         size_t str_len = snprintf(nullptr, 0, "p(1,%ld)=%.6f;p(2,%ld)=%.6f;\n", (p + 1), m_PolyOutline[i].real(), (p + 1), m_PolyOutline[i].imag());
         if(str_len <= 0) throw 11;
         str_len++;
-        char buffer[str_len] = { 0 };
+        char buffer[str_len];
         snprintf(buffer, str_len, "p(1,%ld)=%.6f;p(2,%ld)=%.6f;\n", (p + 1), m_PolyOutline[i].real(), (p + 1), m_PolyOutline[i].imag());
         str_points += buffer;
         p++;
@@ -76,7 +76,7 @@ std::string ExtrudedPolygon::GetCSX_Script()
     size_t str_len = snprintf(nullptr, 0, "p=zeros(2,%ld);\n", p);
     if(str_len <= 0) throw 11;
     str_len++;
-    char buffer[str_len] = { 0 };
+    char buffer[str_len];
     snprintf(buffer, str_len, "p=zeros(2,%ld);\n", p);
     str_full += buffer;
 
@@ -87,7 +87,7 @@ std::string ExtrudedPolygon::GetCSX_Script()
         size_t str_len = snprintf(nullptr, 0, "CSX = AddPolygon(CSX, '%s', %ld, 2, %.6f, p);\n", m_MaterialName.c_str(), m_Priority, m_Z_Height);
         if(str_len <= 0) throw 11;
         str_len++;
-        char buffer[str_len] = { 0 };
+        char buffer[str_len];
         snprintf(buffer, str_len, "CSX = AddPolygon(CSX, '%s', %ld, 2, %.6f, p);\n", m_MaterialName.c_str(), m_Priority, m_Z_Height);
         str_full += buffer;
     }
@@ -97,7 +97,7 @@ std::string ExtrudedPolygon::GetCSX_Script()
                                   m_MaterialName.c_str(), m_Priority, m_Z_Height, m_Thickness);
         if(str_len <= 0) throw 11;
         str_len++;
-        char buffer[str_len] = { 0 };
+        char buffer[str_len];
         snprintf(buffer, str_len, "CSX = AddLinPoly(CSX, '%s', %ld, 2, %.6f, p, %.6f);\n",
                                   m_MaterialName.c_str(), m_Priority, m_Z_Height, m_Thickness);
         str_full += buffer;
