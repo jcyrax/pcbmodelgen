@@ -29,13 +29,10 @@
 
 #include "misc.hpp"
 
-
-
-
-#define s_VERSION                           "0.2.0"
+#define s_VERSION "0.2.0"
 
 /*
-*/
+ */
 int main(int argc, char* argv[])
 {
     bool grid_arg_set = false;
@@ -53,17 +50,26 @@ int main(int argc, char* argv[])
     try
     {
         TCLAP::CmdLine cmd("KiCAD PCB file to openEMS converter", ' ', s_VERSION);
-        TCLAP::ValueArg<std::string> config_arg("c", "config", "(IN) JSON configuration file name.", true, "config.json", "string");
-        TCLAP::ValueArg<std::string> grid_arg("g", "grid", "(optional) (OUT) Model mesh grid output file name. Octave function file.", false, "mesh.m", "string");
-        TCLAP::ValueArg<std::string> model_arg("m", "model", "(optional) (OUT) Model data output file name. Octave function file.", false, "model.m", "string");
-        TCLAP::ValueArg<std::string> xml_arg("x", "xml", "(optional) (IN) openEMS xml settings file into which model data are injected.", false, "simulation.xml", "string");
-        TCLAP::ValueArg<std::string> kicad_arg("p", "pcb", "(IN) KiCAD PCB file to convert.", true, "pcb.kicad_pcb", "string");
-        cmd.add( config_arg );
-        cmd.add( grid_arg );
-        cmd.add( model_arg );
-        cmd.add( xml_arg );
-        cmd.add( kicad_arg );
-        cmd.parse( argc, argv );
+        TCLAP::ValueArg<std::string> config_arg("c", "config", "(IN) JSON configuration file name.",
+                                                true, "config.json", "string");
+        TCLAP::ValueArg<std::string> grid_arg(
+            "g", "grid", "(optional) (OUT) Model mesh grid output file name. Octave function file.",
+            false, "mesh.m", "string");
+        TCLAP::ValueArg<std::string> model_arg(
+            "m", "model", "(optional) (OUT) Model data output file name. Octave function file.",
+            false, "model.m", "string");
+        TCLAP::ValueArg<std::string> xml_arg(
+            "x", "xml",
+            "(optional) (IN) openEMS xml settings file into which model data are injected.", false,
+            "simulation.xml", "string");
+        TCLAP::ValueArg<std::string> kicad_arg("p", "pcb", "(IN) KiCAD PCB file to convert.", true,
+                                               "pcb.kicad_pcb", "string");
+        cmd.add(config_arg);
+        cmd.add(grid_arg);
+        cmd.add(model_arg);
+        cmd.add(xml_arg);
+        cmd.add(kicad_arg);
+        cmd.parse(argc, argv);
 
         grid_arg_set = grid_arg.isSet();
         model_arg_set = model_arg.isSet();
@@ -75,7 +81,7 @@ int main(int argc, char* argv[])
         xml_inject_file = xml_arg.getValue();
         pcb_file = kicad_arg.getValue();
 
-    }catch(TCLAP::ArgException &e)
+    } catch (TCLAP::ArgException& e)
     {
         std::cerr << "error: " << e.error() << " for arg " << e.argId() << std::endl;
         exit(-1);
@@ -89,17 +95,17 @@ int main(int argc, char* argv[])
     kicad_to_ems::KiCAD_to_openEMS converter(conf, pcb_file.c_str());
 
     // write output files
-    if(grid_arg_set)
+    if (grid_arg_set)
     {
         converter.WriteMesh_Octave(grid_file.c_str());
     }
-    if(model_arg_set)
+    if (model_arg_set)
     {
         converter.WriteModel_Octave(model_file.c_str());
     }
-    if(xml_arg_set)
+    if (xml_arg_set)
     {
-        if(conf.SimulationBox.SimBoxUsed)
+        if (conf.SimulationBox.SimBoxUsed)
         {
             converter.InjectModelData(xml_inject_file.c_str());
         }
@@ -112,7 +118,3 @@ int main(int argc, char* argv[])
 
     return 1;
 }
-
-
-
-

@@ -26,16 +26,15 @@
 namespace kicad_to_ems
 {
 
-
 class KiCAD_to_openEMS
 {
     Configuration m_Config;
     ems::PCB_EMS_Model* m_Model;
+
 public:
     // Perform PCB conversion
     KiCAD_to_openEMS(Configuration& Config, const char* KiCAD_PCB_File);
     ~KiCAD_to_openEMS();
-
 
     // Save Octave script file with functions to generate model and mesh
     void WriteModel_Octave(const char* File);
@@ -45,19 +44,9 @@ public:
     void WriteMesh_Octave(const char* File);
     std::string GetMesh_Octave();
 
-
     void InjectModelData(const char* XML_Settings);
 };
 
-
-
-
-
-
-
-
-
-}
+} // namespace kicad_to_ems
 
 #endif // kicadtoems_ui_h
-

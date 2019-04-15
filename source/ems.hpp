@@ -31,7 +31,6 @@ class Configuration;
 namespace ems
 {
 
-
 class PCB_EMS_Model
 {
 public:
@@ -77,17 +76,15 @@ private:
     void FilterMesh(std::set<double>& Mesh, double MinGap);
     void SmoothMesh(std::set<double>& Mesh, double MaxGap);
 
-    void MeshTransition(std::set<double>& Mesh, double MaxGap, double DLeft, double DRight, std::set<double>::iterator it0,
+    void MeshTransition(std::set<double>& Mesh,
+                        double MaxGap,
+                        double DLeft,
+                        double DRight,
+                        std::set<double>::iterator it0,
                         std::set<double>::iterator it1);
 };
 
-
-
-
-
-}
-}
+} // namespace ems
+} // namespace kicad_to_ems
 
 #endif // ems_h
-
-

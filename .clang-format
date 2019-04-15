@@ -1,0 +1,23 @@
+BasedOnStyle: LLVM
+
+AccessModifierOffset: -4
+BinPackParameters: false
+BreakBeforeBraces: Custom
+BraceWrapping:
+  AfterClass: true
+  AfterControlStatement: true
+  AfterEnum: true
+  AfterFunction: true
+  AfterNamespace: true
+  AfterStruct: false
+  AfterUnion: true
+  AfterExternBlock: true
+  BeforeCatch: false
+  BeforeElse: true
+  SplitEmptyFunction: false
+BreakStringLiterals: true
+ColumnLimit: 100
+ConstructorInitializerAllOnOneLineOrOnePerLine: true
+IndentWidth: 4
+PointerAlignment: Left
+SortIncludes: false

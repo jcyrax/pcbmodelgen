@@ -30,8 +30,6 @@
 
 #include "kicadtoems_config.hpp"
 
-
-
 using namespace kicad_to_ems;
 using namespace ems;
 using namespace pems;
@@ -41,29 +39,30 @@ using std::complex;
 
 std::string printMeshSet(std::set<double>& MeshSet);
 
-
 void PCB_EMS_Model::InjectOpenEMS_Script(const std::string& SourceFile)
 {
 
     XMLDocument doc;
-    doc.LoadFile( SourceFile.c_str() );
+    doc.LoadFile(SourceFile.c_str());
     XMLElement* root = doc.RootElement();
 
     // openEMS.ContinuousStructure.Properties   Material | Metal
     XMLElement* node;
 
     node = root->FirstChildElement("ContinuousStructure");
-    if(node == nullptr) throw ems_exc("Bad XML structure. Can't inject model");
+    if (node == nullptr)
+        throw ems_exc("Bad XML structure. Can't inject model");
     node = node->FirstChildElement("Properties");
-    if(node == nullptr) throw ems_exc("Bad XML structure. Can't inject model");
+    if (node == nullptr)
+        throw ems_exc("Bad XML structure. Can't inject model");
 
     // find and delete all material and metal nodes
     XMLElement* material;
-    while((material = node->FirstChildElement("Material")))
+    while ((material = node->FirstChildElement("Material")))
     {
         node->DeleteChild(material);
     }
-    while((material = node->FirstChildElement("Metal")))
+    while ((material = node->FirstChildElement("Metal")))
     {
         node->DeleteChild(material);
     }
@@ -74,15 +73,14 @@ void PCB_EMS_Model::InjectOpenEMS_Script(const std::string& SourceFile)
     GenMaterialSection_XML(m_SimBox.materials.hole_fill, node);
     GenMaterialSection_XML(m_SimBox.box_fill.box_material, node);
 
-
-    doc.SaveFile( SourceFile.c_str() );
+    doc.SaveFile(SourceFile.c_str());
 }
 
 void PCB_EMS_Model::GenMaterialSection_XML(Configuration::MaterialProps& Material, XMLElement* Node)
 {
     XMLElement* material;
 
-    if(Material.IsPEC)
+    if (Material.IsPEC)
     {
         material = Node->GetDocument()->NewElement("Metal");
         material->SetAttribute("Name", Material.Name.c_str());
@@ -92,7 +90,8 @@ void PCB_EMS_Model::GenMaterialSection_XML(Configuration::MaterialProps& Materia
         material = Node->GetDocument()->NewElement("Material");
         material->SetAttribute("Name", Material.Name.c_str());
         XMLElement* mat_property = Node->GetDocument()->NewElement("Property");
-        if(mat_property == nullptr) throw ems_exc("TinyXML2 Create NewElement() failed");
+        if (mat_property == nullptr)
+            throw ems_exc("TinyXML2 Create NewElement() failed");
         mat_property->SetAttribute("Epsilon", Material.Epsilon);
         mat_property->SetAttribute("Mue", Material.Mue);
         mat_property->SetAttribute("Kappa", Material.Kappa);
@@ -103,20 +102,21 @@ void PCB_EMS_Model::GenMaterialSection_XML(Configuration::MaterialProps& Materia
     }
 
     XMLElement* primitives = Node->GetDocument()->NewElement("Primitives");
-    if(primitives == nullptr) throw ems_exc("TinyXML2 Create NewElement() failed");
+    if (primitives == nullptr)
+        throw ems_exc("TinyXML2 Create NewElement() failed");
     material->InsertEndChild(primitives);
 
-    for(size_t i = 0; i < m_Segments.size(); i++)
+    for (size_t i = 0; i < m_Segments.size(); i++)
     {
         m_Segments[i].GetXML_Primitive(primitives, Material.Name);
     }
 
-    for(size_t i = 0; i < m_Vias.size(); i++)
+    for (size_t i = 0; i < m_Vias.size(); i++)
     {
         m_Vias[i].GetXML_Primitive(primitives, Material.Name);
     }
 
-    for(size_t i = 0; i < m_Polys.size(); i++)
+    for (size_t i = 0; i < m_Polys.size(); i++)
     {
         m_Polys[i].GetXML_Primitive(primitives, Material.Name);
     }
@@ -128,17 +128,17 @@ std::string PCB_EMS_Model::GetModelScript()
 {
     std::string str = "function retval = kicad_pcb_model(CSX)\n";
 
-    for(size_t i = 0; i < m_Segments.size(); i++)
+    for (size_t i = 0; i < m_Segments.size(); i++)
     {
         str += m_Segments[i].GetCSX_Script();
     }
 
-    for(size_t i = 0; i < m_Vias.size(); i++)
+    for (size_t i = 0; i < m_Vias.size(); i++)
     {
         str += m_Vias[i].GetCSX_Script();
     }
 
-    for(size_t i = 0; i < m_Polys.size(); i++)
+    for (size_t i = 0; i < m_Polys.size(); i++)
     {
         str += m_Polys[i].GetCSX_Script();
     }
@@ -153,7 +153,7 @@ pems::MeshLines PCB_EMS_Model::GetOmptimalMesh()
 {
     MeshLines mesh;
 
-    if(m_SimBox.SimBoxUsed)
+    if (m_SimBox.SimBoxUsed)
     {
         mesh.X.insert(m_SimBox.min.X);
         mesh.X.insert(m_SimBox.max.X);
@@ -164,17 +164,17 @@ pems::MeshLines PCB_EMS_Model::GetOmptimalMesh()
     }
 
     // generate automatic mesh from PCB model
-    if(m_MeshParams.automatic_mesh.insert_automatic_mesh)
+    if (m_MeshParams.automatic_mesh.insert_automatic_mesh)
     {
         // get model mesh lines
-        for(size_t i = 0; i < m_Segments.size(); i++)
+        for (size_t i = 0; i < m_Segments.size(); i++)
         {
             MeshLines el_mesh = m_Segments[i].GetMeshData();
             mesh.X.insert(el_mesh.X.begin(), el_mesh.X.end());
             mesh.Y.insert(el_mesh.Y.begin(), el_mesh.Y.end());
             mesh.Z.insert(el_mesh.Z.begin(), el_mesh.Z.end());
         }
-        for(size_t i = 0; i < m_Vias.size(); i++)
+        for (size_t i = 0; i < m_Vias.size(); i++)
         {
             MeshLines el_mesh = m_Vias[i].GetMeshData();
             mesh.X.insert(el_mesh.X.begin(), el_mesh.X.end());
@@ -182,7 +182,7 @@ pems::MeshLines PCB_EMS_Model::GetOmptimalMesh()
             mesh.Z.insert(el_mesh.Z.begin(), el_mesh.Z.end());
         }
 
-        for(size_t i = 0; i < m_Polys.size(); i++)
+        for (size_t i = 0; i < m_Polys.size(); i++)
         {
             MeshLines el_mesh = m_Polys[i].GetMeshData();
             mesh.X.insert(el_mesh.X.begin(), el_mesh.X.end());
@@ -192,21 +192,21 @@ pems::MeshLines PCB_EMS_Model::GetOmptimalMesh()
 
         // insert Z axis mesh
         double line_interval = m_ConvSet.pcb_height / (m_MeshParams.automatic_mesh.pcb_z_lines + 1);
-        for(size_t i = 0; i < m_MeshParams.automatic_mesh.pcb_z_lines; ++i)
+        for (size_t i = 0; i < m_MeshParams.automatic_mesh.pcb_z_lines; ++i)
         {
             mesh.Z.insert((i + 1) * line_interval);
         }
 
         // Remove lines that are to close
-        if(m_MeshParams.automatic_mesh.remove_small_cells)
+        if (m_MeshParams.automatic_mesh.remove_small_cells)
         {
             FilterMesh(mesh.X, m_MeshParams.automatic_mesh.min_cell_size.X);
             FilterMesh(mesh.Y, m_MeshParams.automatic_mesh.min_cell_size.Y);
             FilterMesh(mesh.Z, m_MeshParams.automatic_mesh.min_cell_size.Z);
         }
 
-        //SmoothMesh
-        if(m_MeshParams.automatic_mesh.smooth_mesh_lines)
+        // SmoothMesh
+        if (m_MeshParams.automatic_mesh.smooth_mesh_lines)
         {
             SmoothMesh(mesh.X, m_MeshParams.automatic_mesh.max_cell_size.X);
             SmoothMesh(mesh.Y, m_MeshParams.automatic_mesh.max_cell_size.Y);
@@ -215,7 +215,7 @@ pems::MeshLines PCB_EMS_Model::GetOmptimalMesh()
     }
 
     // insert additional manual mesh
-    if(m_MeshParams.manual_mesh.insert_manual_mesh)
+    if (m_MeshParams.manual_mesh.insert_manual_mesh)
     {
         mesh.X.insert(m_MeshParams.manual_mesh.X.begin(), m_MeshParams.manual_mesh.X.end());
         mesh.Y.insert(m_MeshParams.manual_mesh.Y.begin(), m_MeshParams.manual_mesh.Y.end());
@@ -225,7 +225,10 @@ pems::MeshLines PCB_EMS_Model::GetOmptimalMesh()
     return mesh;
 }
 
-void PCB_EMS_Model::MeshTransition(std::set<double>& Mesh, double MaxGap, double DLeft, double DRight,
+void PCB_EMS_Model::MeshTransition(std::set<double>& Mesh,
+                                   double MaxGap,
+                                   double DLeft,
+                                   double DRight,
                                    std::set<double>::iterator it0,
                                    std::set<double>::iterator it1)
 {
@@ -234,17 +237,19 @@ void PCB_EMS_Model::MeshTransition(std::set<double>& Mesh, double MaxGap, double
 
     double mesh_neighbor_mul = m_MeshParams.automatic_mesh.smth_neighbor_size_diff;
     mesh_neighbor_mul -= mesh_neighbor_mul * 0.0001;
-    if(mesh_neighbor_mul < 1.0) mesh_neighbor_mul = 1.0;
+    if (mesh_neighbor_mul < 1.0)
+        mesh_neighbor_mul = 1.0;
 
-    while(DLeft > DRight * mesh_neighbor_mul)
+    while (DLeft > DRight * mesh_neighbor_mul)
     {
         skip_second = true;
         double needed_size = mesh_neighbor_mul * DRight;
-        if(needed_size > MaxGap) needed_size = MaxGap;
+        if (needed_size > MaxGap)
+            needed_size = MaxGap;
         double needed_space = needed_size * 2;
 
         double new_mesh_line;
-        if(delta >= needed_space)
+        if (delta >= needed_space)
         {
             new_mesh_line = *it1 - needed_size;
             DRight = *it1 - new_mesh_line;
@@ -252,7 +257,7 @@ void PCB_EMS_Model::MeshTransition(std::set<double>& Mesh, double MaxGap, double
         }
         else
         {
-            if(delta * mesh_neighbor_mul / 2 >= DRight)
+            if (delta * mesh_neighbor_mul / 2 >= DRight)
             {
                 new_mesh_line = *it0 + (delta / 2.0);
                 DRight = *it1 - new_mesh_line;
@@ -262,13 +267,14 @@ void PCB_EMS_Model::MeshTransition(std::set<double>& Mesh, double MaxGap, double
         }
         delta = *it1 - *it0;
     }
-    while(!skip_second && DLeft < DRight / mesh_neighbor_mul)
+    while (!skip_second && DLeft < DRight / mesh_neighbor_mul)
     {
         double needed_size = mesh_neighbor_mul * DLeft;
-        if(needed_size > MaxGap) needed_size = MaxGap;
+        if (needed_size > MaxGap)
+            needed_size = MaxGap;
         double needed_space = needed_size * 2;
 
-        if(delta >= needed_space)
+        if (delta >= needed_space)
         {
             double new_mesh_line = *it0 + needed_size;
             DLeft = new_mesh_line - *it0;
@@ -276,7 +282,7 @@ void PCB_EMS_Model::MeshTransition(std::set<double>& Mesh, double MaxGap, double
         }
         else
         {
-            if(delta * mesh_neighbor_mul / 2 >= DLeft)
+            if (delta * mesh_neighbor_mul / 2 >= DLeft)
             {
                 double new_mesh_line = *it0 + (delta / 2.0);
                 DLeft = new_mesh_line - *it0;
@@ -288,18 +294,20 @@ void PCB_EMS_Model::MeshTransition(std::set<double>& Mesh, double MaxGap, double
     }
 
     // symmetry
-    while(1)
+    while (1)
     {
         delta = *it1 - *it0;
 
         double needed_size_left = mesh_neighbor_mul * DLeft;
         double needed_size_right = mesh_neighbor_mul * DRight;
-        if(needed_size_left > MaxGap) needed_size_left = MaxGap;
-        if(needed_size_right > MaxGap) needed_size_right = MaxGap;
+        if (needed_size_left > MaxGap)
+            needed_size_left = MaxGap;
+        if (needed_size_right > MaxGap)
+            needed_size_right = MaxGap;
 
         double needed_space = (needed_size_left + needed_size_right) * 2;
 
-        if(delta >= needed_space)
+        if (delta >= needed_space)
         {
             double new_mesh_line_left = *it0 + needed_size_left;
             double new_mesh_line_right = *it1 - needed_size_right;
@@ -314,21 +322,21 @@ void PCB_EMS_Model::MeshTransition(std::set<double>& Mesh, double MaxGap, double
             double cell_size = (DLeft + DRight) / 2;
             size_t cell_count;
 
-            if(cell_size > MaxGap)
+            if (cell_size > MaxGap)
             {
                 cell_size = MaxGap;
             }
 
             cell_count = std::floor(delta / cell_size);
             cell_size = delta / cell_count;
-            if(cell_size > MaxGap)
+            if (cell_size > MaxGap)
             {
                 cell_size = MaxGap;
                 cell_count = std::ceil(delta / cell_size);
                 cell_size = delta / cell_count;
             }
 
-            for(size_t i = 1; i < cell_count; i++)
+            for (size_t i = 1; i < cell_count; i++)
             {
                 Mesh.insert(*it0 + i * cell_size);
             }
@@ -342,9 +350,10 @@ void PCB_EMS_Model::SmoothMesh(std::set<double>& Mesh, double MaxGap)
     std::set<double>::iterator prev;
 
     double mesh_neighbor_mul = m_MeshParams.automatic_mesh.smth_neighbor_size_diff;
-    if(mesh_neighbor_mul < 1.0) mesh_neighbor_mul = 1.0;
+    if (mesh_neighbor_mul < 1.0)
+        mesh_neighbor_mul = 1.0;
     // make size transitions smooth
-    if(Mesh.size() >= 3)
+    if (Mesh.size() >= 3)
     {
         std::set<double>::iterator it0 = Mesh.begin();
         std::set<double>::iterator it1 = it0;
@@ -352,27 +361,31 @@ void PCB_EMS_Model::SmoothMesh(std::set<double>& Mesh, double MaxGap)
         std::set<double>::iterator it2 = it1;
         it2++;
 
-        while(it2 != Mesh.end())
+        while (it2 != Mesh.end())
         {
             double delta_left = *it1 - *it0;
             double delta_right = *it2 - *it1;
-            if(delta_left > delta_right * mesh_neighbor_mul)
+            if (delta_left > delta_right * mesh_neighbor_mul)
             {
                 double previous_delta;
                 std::set<double>::iterator prev = it0;
                 prev--;
-                if(it0 != Mesh.begin() && prev != Mesh.begin()) previous_delta = *it0 - *prev;
-                else previous_delta = std::numeric_limits<double>::max();
+                if (it0 != Mesh.begin() && prev != Mesh.begin())
+                    previous_delta = *it0 - *prev;
+                else
+                    previous_delta = std::numeric_limits<double>::max();
 
                 MeshTransition(Mesh, MaxGap, previous_delta, delta_right, it0, it1);
             }
-            else if(delta_left * mesh_neighbor_mul < delta_right)
+            else if (delta_left * mesh_neighbor_mul < delta_right)
             {
                 double next_delta;
                 std::set<double>::iterator next = it2;
                 next++;
-                if(it2 != Mesh.end() && next != Mesh.end()) next_delta = *next - *it2;
-                else next_delta = std::numeric_limits<double>::max();
+                if (it2 != Mesh.end() && next != Mesh.end())
+                    next_delta = *next - *it2;
+                else
+                    next_delta = std::numeric_limits<double>::max();
 
                 MeshTransition(Mesh, MaxGap, delta_left, next_delta, it1, it2);
             }
@@ -391,9 +404,9 @@ void PCB_EMS_Model::FilterMesh(std::set<double>& Mesh, double MinGap)
     std::set<double>::iterator prev;
     std::set<double>::iterator next = Mesh.begin();
 
-    for(size_t index = 0; next != Mesh.end(); ++index, ++next)
+    for (size_t index = 0; next != Mesh.end(); ++index, ++next)
     {
-        if(index < 2)
+        if (index < 2)
         {
             continue;
         }
@@ -403,7 +416,7 @@ void PCB_EMS_Model::FilterMesh(std::set<double>& Mesh, double MinGap)
         prev = cur;
         prev--;
 
-        if(*cur - *prev < MinGap)
+        if (*cur - *prev < MinGap)
         {
             double new_line = (*cur + *prev) / 2.0;
             Mesh.erase(cur);
@@ -427,9 +440,9 @@ std::string PCB_EMS_Model::GetMeshScript()
     str += "function retval = kicad_pcb_mesh()\n";
     str += "mesh.x = [ ";
     auto it = mesh.X.begin();
-    while(it != mesh.X.end())
+    while (it != mesh.X.end())
     {
-        if(it == mesh.X.begin())
+        if (it == mesh.X.begin())
         {
             previous = *it;
         }
@@ -446,9 +459,9 @@ std::string PCB_EMS_Model::GetMeshScript()
 
     str += "mesh.y = [ ";
     it = mesh.Y.begin();
-    while(it != mesh.Y.end())
+    while (it != mesh.Y.end())
     {
-        if(it == mesh.Y.begin())
+        if (it == mesh.Y.begin())
         {
             previous = *it;
         }
@@ -465,9 +478,9 @@ std::string PCB_EMS_Model::GetMeshScript()
 
     str += "mesh.z = [ ";
     it = mesh.Z.begin();
-    while(it != mesh.Z.end())
+    while (it != mesh.Z.end())
     {
-        if(it == mesh.Z.begin())
+        if (it == mesh.Z.begin())
         {
             previous = *it;
         }
@@ -488,10 +501,10 @@ std::string PCB_EMS_Model::GetMeshScript()
     str += "\n";
     str += "% Mesh gap sizes:\n";
 
-    for(size_t i = 0; i < 3; ++i)
+    for (size_t i = 0; i < 3; ++i)
     {
         double max_gap, min_gap;
-        switch(i)
+        switch (i)
         {
         case 0:
             str += "% X:\n% ";
@@ -510,13 +523,13 @@ std::string PCB_EMS_Model::GetMeshScript()
             break;
         }
         std::vector<size_t> bad_gap_indices;
-        for(size_t k = 0; k < gaps[i].size(); ++k)
+        for (size_t k = 0; k < gaps[i].size(); ++k)
         {
-            if(k != 0 && k % 10 == 0)
+            if (k != 0 && k % 10 == 0)
             {
-                for(size_t j = 0; j < bad_gap_indices.size(); ++j)
+                for (size_t j = 0; j < bad_gap_indices.size(); ++j)
                 {
-                    if(j == 0)
+                    if (j == 0)
                     {
                         str += "\tWARNING mesh gap size violate configuration at columns: ";
                     }
@@ -526,8 +539,10 @@ std::string PCB_EMS_Model::GetMeshScript()
                 bad_gap_indices.clear();
             }
             str += std::to_string(gaps[i][k]) + " ";
-            if(gaps[i][k] > max_gap) bad_gap_indices.push_back(k % 10);
-            if(gaps[i][k] < min_gap) bad_gap_indices.push_back(k % 10);
+            if (gaps[i][k] > max_gap)
+                bad_gap_indices.push_back(k % 10);
+            if (gaps[i][k] < min_gap)
+                bad_gap_indices.push_back(k % 10);
         }
         str += "\n";
     }
@@ -535,9 +550,9 @@ std::string PCB_EMS_Model::GetMeshScript()
     str += "\n";
     str += "% Mesh gap ratios:\n";
 
-    for(size_t i = 0; i < 3; ++i)
+    for (size_t i = 0; i < 3; ++i)
     {
-        switch(i)
+        switch (i)
         {
         case 0:
             str += "% X:\n% ";
@@ -551,10 +566,10 @@ std::string PCB_EMS_Model::GetMeshScript()
         }
         double configured_gap_ratio = m_MeshParams.automatic_mesh.smth_neighbor_size_diff;
         std::vector<size_t> bad_gap_indices;
-        for(size_t k = 1; k < gaps[i].size(); ++k)
+        for (size_t k = 1; k < gaps[i].size(); ++k)
         {
             double gap_ratio;
-            if(gaps[i][k - 1] < gaps[i][k])
+            if (gaps[i][k - 1] < gaps[i][k])
             {
                 gap_ratio = gaps[i][k] / gaps[i][k - 1];
             }
@@ -564,13 +579,14 @@ std::string PCB_EMS_Model::GetMeshScript()
             }
 
             str += std::to_string(gap_ratio) + " ";
-            if(gap_ratio > configured_gap_ratio) bad_gap_indices.push_back((k - 1) % 10);
+            if (gap_ratio > configured_gap_ratio)
+                bad_gap_indices.push_back((k - 1) % 10);
 
-            if(k % 10 == 0)
+            if (k % 10 == 0)
             {
-                for(size_t j = 0; j < bad_gap_indices.size(); ++j)
+                for (size_t j = 0; j < bad_gap_indices.size(); ++j)
                 {
-                    if(j == 0)
+                    if (j == 0)
                     {
                         str += "\tWARNING mesh gap ratio violate configuration at columns: ";
                     }
@@ -583,15 +599,14 @@ std::string PCB_EMS_Model::GetMeshScript()
         str += "\n";
     }
 
-
     bool warning = false;
 
     // Verify mesh quality - print warnings if deviations
-    for(size_t i = 0; i < 3; ++i)
+    for (size_t i = 0; i < 3; ++i)
     {
         std::set<double> mesh_axis;
         double max_gap, min_gap;
-        switch(i)
+        switch (i)
         {
         case 0:
             mesh_axis = mesh.X;
@@ -617,12 +632,12 @@ std::string PCB_EMS_Model::GetMeshScript()
         std::set<double>::iterator it2 = it1;
         it2++;
 
-        while(it2 != mesh_axis.end())
+        while (it2 != mesh_axis.end())
         {
             double size_left = *it1 - *it0;
             double size_right = *it2 - *it1;
             double gap_ratio;
-            if(size_left < size_right)
+            if (size_left < size_right)
             {
                 gap_ratio = size_right / size_left;
             }
@@ -630,23 +645,25 @@ std::string PCB_EMS_Model::GetMeshScript()
             {
                 gap_ratio = size_left / size_right;
             }
-            if(gap_ratio > m_MeshParams.automatic_mesh.smth_neighbor_size_diff)
+            if (gap_ratio > m_MeshParams.automatic_mesh.smth_neighbor_size_diff)
             {
-                printf("WARNING: mesh gap ratio deviation. Configured max ratio %f, but actual ratio %f\n",
-                       m_MeshParams.automatic_mesh.smth_neighbor_size_diff,
-                       gap_ratio);
+                printf("WARNING: mesh gap ratio deviation. Configured max ratio %f, but actual "
+                       "ratio %f\n",
+                       m_MeshParams.automatic_mesh.smth_neighbor_size_diff, gap_ratio);
                 warning = true;
             }
-            if(size_left > max_gap || size_right > max_gap)
+            if (size_left > max_gap || size_right > max_gap)
             {
-                printf("ERROR: mesh gap size too large. Configured max size %f, but actual size %f\n",
-                       max_gap, size_left > size_right ? size_left : size_right);
+                printf(
+                    "ERROR: mesh gap size too large. Configured max size %f, but actual size %f\n",
+                    max_gap, size_left > size_right ? size_left : size_right);
                 warning = true;
             }
-            if(size_left < min_gap || size_right < min_gap)
+            if (size_left < min_gap || size_right < min_gap)
             {
-                printf("ERROR: mesh gap size too small. Configured min size %f, but actual size %f\n",
-                       min_gap, size_left < size_right ? size_left : size_right);
+                printf(
+                    "ERROR: mesh gap size too small. Configured min size %f, but actual size %f\n",
+                    min_gap, size_left < size_right ? size_left : size_right);
                 warning = true;
             }
 
@@ -656,7 +673,7 @@ std::string PCB_EMS_Model::GetMeshScript()
         }
     }
 
-    if(warning)
+    if (warning)
     {
         printf("Check generated mesh file for detailed warning information\n");
     }
@@ -664,21 +681,19 @@ std::string PCB_EMS_Model::GetMeshScript()
     return str;
 }
 
-
-
 PCB_EMS_Model::PCB_EMS_Model(srecs::charvec_t& Data, Configuration& Config)
 
-                            : m_Config(Config),
-                              m_SimBox(Config.SimulationBox),
-                              m_MeshParams(Config.mesh_params),
-                              m_ConvSet(Config.conversion_settings)
+    : m_Config(Config),
+      m_SimBox(Config.SimulationBox),
+      m_MeshParams(Config.mesh_params),
+      m_ConvSet(Config.conversion_settings)
 {
     m_MetalPriority = 1;
     m_PCBPriority = 0;
     //--------------------
 
     // create box segment if used
-    if(Config.SimulationBox.box_fill.use_box_fill)
+    if (Config.SimulationBox.box_fill.use_box_fill)
     {
         Configuration::xyz_triplet<double>& dim_min = Config.SimulationBox.min;
         Configuration::xyz_triplet<double>& dim_max = Config.SimulationBox.max;
@@ -686,7 +701,8 @@ PCB_EMS_Model::PCB_EMS_Model(srecs::charvec_t& Data, Configuration& Config)
 
         std::complex<double> start(dim_min.X, 0);
         std::complex<double> end(dim_max.X, 0);
-        Segment seg(end, start, dim_min.Z, dim_max.Y - dim_min.Y, dim_max.Z - dim_min.Z, 0, m_ConvSet.corner_approximation, material);
+        Segment seg(end, start, dim_min.Z, dim_max.Y - dim_min.Y, dim_max.Z - dim_min.Z, 0,
+                    m_ConvSet.corner_approximation, material);
         m_Segments.push_back(seg);
     }
 
@@ -698,13 +714,13 @@ PCB_EMS_Model::PCB_EMS_Model(srecs::charvec_t& Data, Configuration& Config)
     SREC srec(Data.begin(), Data.end());
 
     srec.GetNext();
-    if(srec.GetRecName() != "kicad_pcb")
+    if (srec.GetRecName() != "kicad_pcb")
     {
         std::cout << "Error: not kicad_pcb file format";
         return;
     }
     srec.GetChild();
-    if(srec.GetRecord() != "(version 4)")
+    if (srec.GetRecord() != "(version 4)")
     {
         // print warning about version
         std::cout << "Warning: kicad_pcb file version not 4. May experience some errors";
@@ -712,21 +728,23 @@ PCB_EMS_Model::PCB_EMS_Model(srecs::charvec_t& Data, Configuration& Config)
 
     srec.GetNext("setup");
     SREC setup = srec;
-    if(setup.GetChild("aux_axis_origin"))
+    if (setup.GetChild("aux_axis_origin"))
     {
         double x, y;
         std::string record;
         record = setup.GetRecord();
-        if(sscanf(record.c_str(), "(aux_axis_origin %lf %lf", &x, &y) != 2) throw ems_exc("EMS_Model: 'aux_axis_origin' field read failed");
+        if (sscanf(record.c_str(), "(aux_axis_origin %lf %lf", &x, &y) != 2)
+            throw ems_exc("EMS_Model: 'aux_axis_origin' field read failed");
         y = -y;
-        m_AuxAxisOrigin = complex<double>(x,y);
-    }else
+        m_AuxAxisOrigin = complex<double>(x, y);
+    }
+    else
     {
         m_AuxAxisIsOrigin = false;
     }
 
     // go trough all records in kicad_pcb record
-    while(srec.GetNext())
+    while (srec.GetNext())
     {
         GetSegment(srec);
         GetVia(srec);
@@ -741,7 +759,8 @@ PCB_EMS_Model::PCB_EMS_Model(srecs::charvec_t& Data, Configuration& Config)
 
 void PCB_EMS_Model::GenPCB_Polygon()
 {
-    if(m_PCB_OutlineElements.size() == 0) return;
+    if (m_PCB_OutlineElements.size() == 0)
+        return;
     // chain together outline line elements and generate polygon for PCB
     std::vector<std::complex<double>> points;
 
@@ -751,23 +770,25 @@ void PCB_EMS_Model::GenPCB_Polygon()
     points.push_back(m_PCB_OutlineElements[idx].m_End);
     std::complex<double> last_point = m_PCB_OutlineElements[idx].m_End;
 
-    while(inserted < m_PCB_OutlineElements.size())
+    while (inserted < m_PCB_OutlineElements.size())
     {
         bool match = false;
-        for(size_t n = 0; n < m_PCB_OutlineElements.size(); n++)
+        for (size_t n = 0; n < m_PCB_OutlineElements.size(); n++)
         {
-            if(n == idx) continue;
+            if (n == idx)
+                continue;
 
-            if(m_PCB_OutlineElements[n].m_Start == last_point)
+            if (m_PCB_OutlineElements[n].m_Start == last_point)
             {
                 match = true;
                 last_point = m_PCB_OutlineElements[n].m_End;
-            }else if(m_PCB_OutlineElements[n].m_End == last_point)
+            }
+            else if (m_PCB_OutlineElements[n].m_End == last_point)
             {
                 match = true;
                 last_point = m_PCB_OutlineElements[n].m_Start;
             }
-            if(match)
+            if (match)
             {
                 idx = n;
                 points.push_back(last_point);
@@ -775,21 +796,23 @@ void PCB_EMS_Model::GenPCB_Polygon()
                 break;
             }
         }
-        if(!match)
+        if (!match)
         {
-            std::cout << "Failed to generate complete PCB outline" << "\n";
+            std::cout << "Failed to generate complete PCB outline"
+                      << "\n";
             break;
         }
     }
 
     bool is_clk_wise = IsClockWiseOrder(points);
 
-    if(!is_clk_wise)
+    if (!is_clk_wise)
     {
         std::reverse(points.begin(), points.end());
     }
 
-    Zone poly(points, 0, 0.2, m_ConvSet.pcb_height, m_PCBPriority, m_ConvSet.corner_approximation, m_SimBox.materials.pcb, true);
+    Zone poly(points, 0, 0.2, m_ConvSet.pcb_height, m_PCBPriority, m_ConvSet.corner_approximation,
+              m_SimBox.materials.pcb, true);
     m_Polys.push_back(poly);
 }
 
@@ -798,13 +821,15 @@ bool PCB_EMS_Model::GetPCB(srecs::SREC Srec)
     std::string record_str;
     std::string rec_name = Srec.GetRecName();
 
-    if(rec_name != "gr_line" && rec_name != "gr_circle" && rec_name != "gr_arc") return false;
+    if (rec_name != "gr_line" && rec_name != "gr_circle" && rec_name != "gr_arc")
+        return false;
 
     // extract layer information
     SREC rec = Srec;
-    if(!rec.GetChild("layer")) throw ems_exc("GetPCB: no 'layer' field");
+    if (!rec.GetChild("layer"))
+        throw ems_exc("GetPCB: no 'layer' field");
     record_str = rec.GetRecord();
-    if(record_str.find("Edge.Cuts") != std::string::npos)
+    if (record_str.find("Edge.Cuts") != std::string::npos)
     {
         // Part of PCB edge layer
         complex<double> endp;
@@ -814,54 +839,62 @@ bool PCB_EMS_Model::GetPCB(srecs::SREC Srec)
 
         // get data
         rec = Srec;
-        if(!rec.GetChild("end")) throw ems_exc("GetPCB: no 'end' field");
+        if (!rec.GetChild("end"))
+            throw ems_exc("GetPCB: no 'end' field");
         record_str = rec.GetRecord();
-        if(sscanf(record_str.c_str(), "(end %lf %lf", &x, &y) != 2) throw ems_exc("GetPCB: 'end' field read failed");
+        if (sscanf(record_str.c_str(), "(end %lf %lf", &x, &y) != 2)
+            throw ems_exc("GetPCB: 'end' field read failed");
         y = -y;
-        endp = complex<double>(x,y);
+        endp = complex<double>(x, y);
 
-        if(rec_name == "gr_line" || rec_name == "gr_arc")
+        if (rec_name == "gr_line" || rec_name == "gr_arc")
         {
             rec = Srec;
-            if(!rec.GetChild("start")) throw ems_exc("GetPCB: no 'start' field");
+            if (!rec.GetChild("start"))
+                throw ems_exc("GetPCB: no 'start' field");
             record_str = rec.GetRecord();
-            if(sscanf(record_str.c_str(), "(start %lf %lf", &x, &y) != 2) throw ems_exc("GetPCB: 'start' field read failed");
+            if (sscanf(record_str.c_str(), "(start %lf %lf", &x, &y) != 2)
+                throw ems_exc("GetPCB: 'start' field read failed");
             y = -y;
-            startp = complex<double>(x,y);
+            startp = complex<double>(x, y);
 
-            if(rec_name == "gr_arc")
+            if (rec_name == "gr_arc")
             {
                 rec = Srec;
-                if(!rec.GetChild("angle")) throw ems_exc("GetPCB: no 'angle' field");
+                if (!rec.GetChild("angle"))
+                    throw ems_exc("GetPCB: no 'angle' field");
                 record_str = rec.GetRecord();
-                if(sscanf(record_str.c_str(), "(angle %lf", &angle) != 1) throw ems_exc("GetPCB: 'angle' field read failed");
+                if (sscanf(record_str.c_str(), "(angle %lf", &angle) != 1)
+                    throw ems_exc("GetPCB: 'angle' field read failed");
             }
-
-        }else
+        }
+        else
         {
             rec = Srec;
-            if(!rec.GetChild("center")) throw ems_exc("GetPCB: no 'center' field");
+            if (!rec.GetChild("center"))
+                throw ems_exc("GetPCB: no 'center' field");
             record_str = rec.GetRecord();
-            if(sscanf(record_str.c_str(), "(center %lf %lf", &x, &y) != 2) throw ems_exc("GetPCB: 'center' field read failed");
+            if (sscanf(record_str.c_str(), "(center %lf %lf", &x, &y) != 2)
+                throw ems_exc("GetPCB: 'center' field read failed");
             y = -y;
-            center = complex<double>(x,y);
+            center = complex<double>(x, y);
         }
 
-        if(rec_name == "gr_line")
+        if (rec_name == "gr_line")
         {
             Line line;
             line.m_Start = MovePoint(startp, m_AuxAxisIsOrigin);
             line.m_End = MovePoint(endp, m_AuxAxisIsOrigin);
             m_PCB_OutlineElements.push_back(line);
-
-        }else if(rec_name == "gr_arc")
+        }
+        else if (rec_name == "gr_arc")
         {
             // start end angle
             double approx_angle = M_PI / (m_ConvSet.corner_approximation + 1);
             double line_cnt = ceil(pems::deg_to_radian(angle) / approx_angle);
             double angle_step = pems::deg_to_radian(angle) / line_cnt;
             complex<double> first = endp;
-            for(size_t i = 0; i < line_cnt; i++)
+            for (size_t i = 0; i < line_cnt; i++)
             {
                 complex<double> second = rot_vector(endp - startp, -angle_step * (i + 1)) + startp;
                 Line line;
@@ -870,8 +903,8 @@ bool PCB_EMS_Model::GetPCB(srecs::SREC Srec)
                 m_PCB_OutlineElements.push_back(line);
                 first = second;
             }
-
-        }else if(rec_name == "gr_circle")
+        }
+        else if (rec_name == "gr_circle")
         {
         }
     }
@@ -880,7 +913,8 @@ bool PCB_EMS_Model::GetPCB(srecs::SREC Srec)
 
 bool PCB_EMS_Model::GetModule(srecs::SREC Srec)
 {
-    if(Srec.GetRecName() != "module") return false;
+    if (Srec.GetRecName() != "module")
+        return false;
 
     SREC module = Srec;
     SREC module_pos_rec = Srec;
@@ -888,17 +922,19 @@ bool PCB_EMS_Model::GetModule(srecs::SREC Srec)
     double x, y, rotation;
     rotation = 0;
 
-    if(!module_pos_rec.GetChild("at")) throw ems_exc("GetModule: 'at' field read failed");
+    if (!module_pos_rec.GetChild("at"))
+        throw ems_exc("GetModule: 'at' field read failed");
     std::string record = module_pos_rec.GetRecord();
-    if(sscanf(record.c_str(), "(at %lf %lf %lf", &x, &y, &rotation) < 2) throw ems_exc("GetModule: 'at' field read failed");
+    if (sscanf(record.c_str(), "(at %lf %lf %lf", &x, &y, &rotation) < 2)
+        throw ems_exc("GetModule: 'at' field read failed");
     y = -y;
 
-    if(module.GetChild("pad"))
+    if (module.GetChild("pad"))
     {
         do
         {
             GetPad(module, x, y, rotation);
-        }while(module.GetNext("pad"));
+        } while (module.GetNext("pad"));
     }
 
     return true;
@@ -912,7 +948,7 @@ bool PCB_EMS_Model::GetPad(srecs::SREC Srec, double ModuleX, double ModuleY, dou
 
     SREC s_record = Srec;
 
-    if(s_record.GetRecName() != "pad")
+    if (s_record.GetRecName() != "pad")
     {
         return false;
     }
@@ -922,35 +958,42 @@ bool PCB_EMS_Model::GetPad(srecs::SREC Srec, double ModuleX, double ModuleY, dou
     char pad_id[record.size()];
     char type[record.size()];
     char shape[record.size()];
-    if(sscanf(record.c_str(), "(pad %s %s %s", pad_id, type, shape) != 3) throw ems_exc("GetPad: read failed");
+    if (sscanf(record.c_str(), "(pad %s %s %s", pad_id, type, shape) != 3)
+        throw ems_exc("GetPad: read failed");
 
     double width, height, layer_height;
     double x, y;
     double rotation = 0;
 
     SREC data = s_record;
-    if(!data.GetChild("at")) throw ems_exc("GetPad: no 'at' field");
+    if (!data.GetChild("at"))
+        throw ems_exc("GetPad: no 'at' field");
     record = data.GetRecord();
-    if(sscanf(record.c_str(), "(at %lf %lf %lf", &x, &y, &rotation) < 2) throw ems_exc("GetPad: 'at' field read failed");
+    if (sscanf(record.c_str(), "(at %lf %lf %lf", &x, &y, &rotation) < 2)
+        throw ems_exc("GetPad: 'at' field read failed");
     y = -y;
 
     data = s_record;
-    if(!data.GetChild("size")) throw ems_exc("GetPad: no 'size' field");
+    if (!data.GetChild("size"))
+        throw ems_exc("GetPad: no 'size' field");
     record = data.GetRecord();
-    if(sscanf(record.c_str(), "(size %lf %lf", &width, &height) != 2) throw ems_exc("GetPad: 'size' field read failed");
+    if (sscanf(record.c_str(), "(size %lf %lf", &width, &height) != 2)
+        throw ems_exc("GetPad: 'size' field read failed");
 
     data = s_record;
-    if(!data.GetChild("layers")) throw ems_exc("GetPad: no 'layers' field");
+    if (!data.GetChild("layers"))
+        throw ems_exc("GetPad: no 'layers' field");
     record = data.GetRecord();
     Configuration::MaterialProps material;
-    if(strstr(record.c_str(), "F.Cu") != nullptr)
+    if (strstr(record.c_str(), "F.Cu") != nullptr)
     {
         layer_height = pcb_h;
         material = m_SimBox.materials.metal_top;
-    }else
+    }
+    else
     {
         material = m_SimBox.materials.metal_bot;
-        if(pcb_t == 0.0)
+        if (pcb_t == 0.0)
         {
             layer_height = -pcb_t;
         }
@@ -962,111 +1005,130 @@ bool PCB_EMS_Model::GetPad(srecs::SREC Srec, double ModuleX, double ModuleY, dou
 
     double drill_x = 0;
     double drill_y = 0;
-    if(strstr(type, "np_thru_hole") != nullptr || strstr(type, "thru_hole") != nullptr)
+    if (strstr(type, "np_thru_hole") != nullptr || strstr(type, "thru_hole") != nullptr)
     {
         // drill pad
         data = s_record;
-        if(!data.GetChild("drill")) throw ems_exc("GetPad: no 'drill' field");
+        if (!data.GetChild("drill"))
+            throw ems_exc("GetPad: no 'drill' field");
         record = data.GetRecord();
-        if(strstr(shape, "circle") != nullptr)
+        if (strstr(shape, "circle") != nullptr)
         {
-            if(sscanf(record.c_str(), "(drill %lf", &drill_x) != 1) throw ems_exc("GetPad: 'drill' field read failed");
+            if (sscanf(record.c_str(), "(drill %lf", &drill_x) != 1)
+                throw ems_exc("GetPad: 'drill' field read failed");
             drill_y = drill_x;
-        }else if(strstr(shape, "oval") != nullptr)
+        }
+        else if (strstr(shape, "oval") != nullptr)
         {
-            if(sscanf(record.c_str(), "(drill oval %lf %lf", &drill_x, &drill_y) != 2) throw ems_exc("GetPad: 'drill' field read failed");
+            if (sscanf(record.c_str(), "(drill oval %lf %lf", &drill_x, &drill_y) != 2)
+                throw ems_exc("GetPad: 'drill' field read failed");
         }
     }
 
     // generate primitives
-    if(strstr(type, "smd") != nullptr)
+    if (strstr(type, "smd") != nullptr)
     {
-        if(strstr(shape, "rect") != nullptr)
+        if (strstr(shape, "rect") != nullptr)
         {
             complex<double> startp = -width / 2;
             complex<double> endp = width / 2;
-            startp = rot_vector(startp, deg_to_radian(rotation - ModuleRot)) + complex<double>(x,y);
-            endp = rot_vector(endp, deg_to_radian(rotation - ModuleRot)) + complex<double>(x,y);
-            startp = rot_vector(startp, deg_to_radian(ModuleRot)) + complex<double>(ModuleX,ModuleY);
-            endp = rot_vector(endp, deg_to_radian(ModuleRot)) + complex<double>(ModuleX,ModuleY);
+            startp =
+                rot_vector(startp, deg_to_radian(rotation - ModuleRot)) + complex<double>(x, y);
+            endp = rot_vector(endp, deg_to_radian(rotation - ModuleRot)) + complex<double>(x, y);
+            startp =
+                rot_vector(startp, deg_to_radian(ModuleRot)) + complex<double>(ModuleX, ModuleY);
+            endp = rot_vector(endp, deg_to_radian(ModuleRot)) + complex<double>(ModuleX, ModuleY);
             startp = MovePoint(startp, m_AuxAxisIsOrigin);
             endp = MovePoint(endp, m_AuxAxisIsOrigin);
 
             Segment seg(startp, endp, layer_height, height, pcb_t, m_MetalPriority, 0, material);
             m_Segments.push_back(seg);
-        }else
+        }
+        else
         {
             double segment_width;
             complex<double> startp, endp;
-            if(width > height)
+            if (width > height)
             {
                 startp = -(width - height) / 2;
                 endp = (width - height) / 2;
                 segment_width = height;
-            }else
+            }
+            else
             {
                 startp = -(height - width) / 2;
                 endp = (height - width) / 2;
                 segment_width = width;
             }
-            startp = rot_vector(startp, deg_to_radian(rotation - ModuleRot)) + complex<double>(x,y);
-            endp = rot_vector(endp, deg_to_radian(rotation - ModuleRot)) + complex<double>(x,y);
-            startp = rot_vector(startp, deg_to_radian(ModuleRot)) + complex<double>(ModuleX,ModuleY);
-            endp = rot_vector(endp, deg_to_radian(ModuleRot)) + complex<double>(ModuleX,ModuleY);
+            startp =
+                rot_vector(startp, deg_to_radian(rotation - ModuleRot)) + complex<double>(x, y);
+            endp = rot_vector(endp, deg_to_radian(rotation - ModuleRot)) + complex<double>(x, y);
+            startp =
+                rot_vector(startp, deg_to_radian(ModuleRot)) + complex<double>(ModuleX, ModuleY);
+            endp = rot_vector(endp, deg_to_radian(ModuleRot)) + complex<double>(ModuleX, ModuleY);
             startp = MovePoint(startp, m_AuxAxisIsOrigin);
             endp = MovePoint(endp, m_AuxAxisIsOrigin);
 
-            Segment seg(startp, endp, layer_height, segment_width, pcb_t, m_MetalPriority, corner_approx ? corner_approx : 1, material);
+            Segment seg(startp, endp, layer_height, segment_width, pcb_t, m_MetalPriority,
+                        corner_approx ? corner_approx : 1, material);
             m_Segments.push_back(seg);
         }
-    }else
+    }
+    else
     {
-        if(strstr(type, "np_thru_hole") != nullptr)
+        if (strstr(type, "np_thru_hole") != nullptr)
         {
             double drill;
             complex<double> startp, endp;
-            if(width > height)
+            if (width > height)
             {
                 startp = -(width - height) / 2;
                 endp = (width - height) / 2;
                 drill = drill_y;
-            }else
+            }
+            else
             {
                 startp = -(height - width) / 2;
                 endp = (height - width) / 2;
                 drill = drill_x;
             }
-            startp = rot_vector(startp, deg_to_radian(rotation - ModuleRot)) + complex<double>(x,y);
-            endp = rot_vector(endp, deg_to_radian(rotation - ModuleRot)) + complex<double>(x,y);
-            startp = rot_vector(startp, deg_to_radian(ModuleRot)) + complex<double>(ModuleX,ModuleY);
-            endp = rot_vector(endp, deg_to_radian(ModuleRot)) + complex<double>(ModuleX,ModuleY);
+            startp =
+                rot_vector(startp, deg_to_radian(rotation - ModuleRot)) + complex<double>(x, y);
+            endp = rot_vector(endp, deg_to_radian(rotation - ModuleRot)) + complex<double>(x, y);
+            startp =
+                rot_vector(startp, deg_to_radian(ModuleRot)) + complex<double>(ModuleX, ModuleY);
+            endp = rot_vector(endp, deg_to_radian(ModuleRot)) + complex<double>(ModuleX, ModuleY);
             startp = MovePoint(startp, m_AuxAxisIsOrigin);
             endp = MovePoint(endp, m_AuxAxisIsOrigin);
 
             Via via(startp, endp, -pcb_t, drill / 2, pcb_h + 2 * pcb_t, m_MetalPriority,
                     corner_approx, drill, material, m_SimBox.materials.hole_fill);
             m_Vias.push_back(via);
-        }else
+        }
+        else
         {
             double segment_width, drill;
             complex<double> startp, endp;
-            if(width > height)
+            if (width > height)
             {
                 startp = -(width - height) / 2;
                 endp = (width - height) / 2;
                 segment_width = height;
                 drill = drill_y;
-            }else
+            }
+            else
             {
                 startp = -(height - width) / 2;
                 endp = (height - width) / 2;
                 segment_width = width;
                 drill = drill_x;
             }
-            startp = rot_vector(startp, deg_to_radian(rotation - ModuleRot)) + complex<double>(x,y);
-            endp = rot_vector(endp, deg_to_radian(rotation - ModuleRot)) + complex<double>(x,y);
-            startp = rot_vector(startp, deg_to_radian(ModuleRot)) + complex<double>(ModuleX,ModuleY);
-            endp = rot_vector(endp, deg_to_radian(ModuleRot)) + complex<double>(ModuleX,ModuleY);
+            startp =
+                rot_vector(startp, deg_to_radian(rotation - ModuleRot)) + complex<double>(x, y);
+            endp = rot_vector(endp, deg_to_radian(rotation - ModuleRot)) + complex<double>(x, y);
+            startp =
+                rot_vector(startp, deg_to_radian(ModuleRot)) + complex<double>(ModuleX, ModuleY);
+            endp = rot_vector(endp, deg_to_radian(ModuleRot)) + complex<double>(ModuleX, ModuleY);
             startp = MovePoint(startp, m_AuxAxisIsOrigin);
             endp = MovePoint(endp, m_AuxAxisIsOrigin);
 
@@ -1088,20 +1150,22 @@ bool PCB_EMS_Model::GetZone(SREC Srec)
     std::string layer;
     std::string record;
 
-    if(Srec.GetRecName() != "zone") return false;
+    if (Srec.GetRecName() != "zone")
+        return false;
 
     // layer
-    if(!Srec.GetChild("layer")) throw ems_exc("GetZone: no 'layer' field");
+    if (!Srec.GetChild("layer"))
+        throw ems_exc("GetZone: no 'layer' field");
     record = Srec.GetRecord();
     layer.insert(layer.begin(), record.begin() + 7, record.end() - 1);
     double height;
     Configuration::MaterialProps material;
-    if(layer == "F.Cu")
+    if (layer == "F.Cu")
     {
         height = m_ConvSet.pcb_height;
         material = m_SimBox.materials.metal_top;
     }
-    else if(layer == "B.Cu")
+    else if (layer == "B.Cu")
     {
         height = -m_ConvSet.pcb_metal_thickness;
         material = m_SimBox.materials.metal_bot;
@@ -1113,31 +1177,37 @@ bool PCB_EMS_Model::GetZone(SREC Srec)
     }
 
     // width
-    if(!Srec.GetNext("min_thickness")) throw ems_exc("GetZone: no 'min_thickness' field");
+    if (!Srec.GetNext("min_thickness"))
+        throw ems_exc("GetZone: no 'min_thickness' field");
     record = Srec.GetRecord();
-    if(sscanf(record.c_str(), "(min_thickness %lf", &width) != 1) throw ems_exc("GetZone: 'min_thickness' field read failed");
+    if (sscanf(record.c_str(), "(min_thickness %lf", &width) != 1)
+        throw ems_exc("GetZone: 'min_thickness' field read failed");
 
     // points
-    while(Srec.GetNext("filled_polygon"))
+    while (Srec.GetNext("filled_polygon"))
     {
         std::vector<std::complex<double>> points;
         SREC filled_poly = Srec;
 
-        if(!filled_poly.GetChild("pts")) throw ems_exc("GetZone: no 'pts' field for zone 'filled_polygon'");
+        if (!filled_poly.GetChild("pts"))
+            throw ems_exc("GetZone: no 'pts' field for zone 'filled_polygon'");
 
-        if(!filled_poly.GetChild("xy")) throw ems_exc("GetZone: no 'xy' field for zone 'filled_polygon' 'pts'");
+        if (!filled_poly.GetChild("xy"))
+            throw ems_exc("GetZone: no 'xy' field for zone 'filled_polygon' 'pts'");
         record = filled_poly.GetRecord();
-        if(sscanf(record.c_str(), "(xy %lf %lf", &point_x, &point_y) != 2) throw ems_exc("GetZone: 'xy' field read failed");
+        if (sscanf(record.c_str(), "(xy %lf %lf", &point_x, &point_y) != 2)
+            throw ems_exc("GetZone: 'xy' field read failed");
         point_y = -point_y;
         auto first = complex<double>(point_x, point_y);
         first = MovePoint(first, m_AuxAxisIsOrigin);
         points.push_back(first);
 
         // while there are points to parse
-        while(filled_poly.GetNext("xy"))
+        while (filled_poly.GetNext("xy"))
         {
             record = filled_poly.GetRecord();
-            if(sscanf(record.c_str(), "(xy %lf %lf", &point_x, &point_y) != 2) throw ems_exc("GetZone: 'xy' field read failed");
+            if (sscanf(record.c_str(), "(xy %lf %lf", &point_x, &point_y) != 2)
+                throw ems_exc("GetZone: 'xy' field read failed");
             point_y = -point_y;
             auto p = complex<double>(point_x, point_y);
             p = MovePoint(p, m_AuxAxisIsOrigin);
@@ -1145,12 +1215,12 @@ bool PCB_EMS_Model::GetZone(SREC Srec)
         }
 
         // delete if last and first point match same location
-        if(points[points.size() - 1] == points[0])
+        if (points[points.size() - 1] == points[0])
         {
             points.erase(points.end() - 1);
         }
-        Zone poly(points, height, width, m_ConvSet.pcb_metal_thickness, m_MetalPriority, m_ConvSet.corner_approximation,
-                           material, false);
+        Zone poly(points, height, width, m_ConvSet.pcb_metal_thickness, m_MetalPriority,
+                  m_ConvSet.corner_approximation, material, false);
 
         m_Polys.push_back(poly);
     }
@@ -1169,23 +1239,32 @@ bool PCB_EMS_Model::GetSegment(SREC Srec)
     std::string layer;
     std::string record;
 
-    if(Srec.GetRecName() != "segment") return false;
+    if (Srec.GetRecName() != "segment")
+        return false;
 
-    if(!Srec.GetChild("start")) throw ems_exc("GetSegment: no 'start' field");
+    if (!Srec.GetChild("start"))
+        throw ems_exc("GetSegment: no 'start' field");
     record = Srec.GetRecord();
-    if(sscanf(record.c_str(), "(start %lf %lf", &start_x, &start_y) != 2) throw ems_exc("GetSegment: 'start' field read failed");
+    if (sscanf(record.c_str(), "(start %lf %lf", &start_x, &start_y) != 2)
+        throw ems_exc("GetSegment: 'start' field read failed");
     start_y = -start_y;
 
-    if(!Srec.GetNext("end")) throw ems_exc("GetSegment: no 'end' field");
+    if (!Srec.GetNext("end"))
+        throw ems_exc("GetSegment: no 'end' field");
     record = Srec.GetRecord();
-    if(sscanf(record.c_str(), "(end %lf %lf", &end_x, &end_y) != 2) throw ems_exc("GetSegment: 'end' field read failed");
+    if (sscanf(record.c_str(), "(end %lf %lf", &end_x, &end_y) != 2)
+        throw ems_exc("GetSegment: 'end' field read failed");
     end_y = -end_y;
 
-    if(!Srec.GetNext("width")) throw ems_exc("GetSegment: no 'width' field");
+    if (!Srec.GetNext("width"))
+        throw ems_exc("GetSegment: no 'width' field");
     record = Srec.GetRecord();
-    if(sscanf(record.c_str(), "(width %lf", &width) != 1) throw ems_exc("GetSegment: 'width' field read failed");
+    if (sscanf(record.c_str(), "(width %lf", &width) != 1)
+        throw ems_exc("GetSegment: 'width' field read failed");
 
-    if(!Srec.GetNext("layer")) throw ems_exc("GetSegment: no 'layer' field");;
+    if (!Srec.GetNext("layer"))
+        throw ems_exc("GetSegment: no 'layer' field");
+    ;
     record = Srec.GetRecord();
     layer.insert(layer.begin(), record.begin() + 7, record.end() - 1);
 
@@ -1195,7 +1274,7 @@ bool PCB_EMS_Model::GetSegment(SREC Srec)
     b = MovePoint(b, m_AuxAxisIsOrigin);
     double height;
     Configuration::MaterialProps material;
-    if(layer == "F.Cu")
+    if (layer == "F.Cu")
     {
         height = m_ConvSet.pcb_height;
         material = m_SimBox.materials.metal_top;
@@ -1206,11 +1285,12 @@ bool PCB_EMS_Model::GetSegment(SREC Srec)
         material = m_SimBox.materials.metal_bot;
     }
 
-    Segment seg(a, b, height, width, m_ConvSet.pcb_metal_thickness, m_MetalPriority, m_ConvSet.corner_approximation, material);
+    Segment seg(a, b, height, width, m_ConvSet.pcb_metal_thickness, m_MetalPriority,
+                m_ConvSet.corner_approximation, material);
 
     m_Segments.push_back(seg);
 
-//    std::cout << "segment" << std::endl;
+    //    std::cout << "segment" << std::endl;
 
     return true;
 }
@@ -1223,25 +1303,33 @@ bool PCB_EMS_Model::GetVia(srecs::SREC Srec)
     double size, drill;
     std::string record;
 
-    if(Srec.GetRecName() != "via") return false;
+    if (Srec.GetRecName() != "via")
+        return false;
 
-    if(!Srec.GetChild("at")) throw ems_exc("GetVia: no 'at' field");
+    if (!Srec.GetChild("at"))
+        throw ems_exc("GetVia: no 'at' field");
     record = Srec.GetRecord();
-    if(sscanf(record.c_str(), "(at %lf %lf", &start_x, &start_y) != 2) throw ems_exc("GetVia: 'at' field read failed");
+    if (sscanf(record.c_str(), "(at %lf %lf", &start_x, &start_y) != 2)
+        throw ems_exc("GetVia: 'at' field read failed");
     start_y = -start_y;
 
-    if(!Srec.GetNext("size")) throw ems_exc("GetVia: no 'size' field");
+    if (!Srec.GetNext("size"))
+        throw ems_exc("GetVia: no 'size' field");
     record = Srec.GetRecord();
-    if(sscanf(record.c_str(), "(size %lf", &size) != 1) throw ems_exc("GetVia: 'size' field read failed");
+    if (sscanf(record.c_str(), "(size %lf", &size) != 1)
+        throw ems_exc("GetVia: 'size' field read failed");
 
-    if(!Srec.GetNext("drill"))
+    if (!Srec.GetNext("drill"))
     {
-        if(!m_RescueViaDrill) throw ems_exc("GetVia: no 'drill' field");
+        if (!m_RescueViaDrill)
+            throw ems_exc("GetVia: no 'drill' field");
         drill = m_LastViaDrill;
-    }else
+    }
+    else
     {
         record = Srec.GetRecord();
-        if(sscanf(record.c_str(), "(drill %lf", &drill) != 1) throw ems_exc("GetVia: 'drill' field read failed");
+        if (sscanf(record.c_str(), "(drill %lf", &drill) != 1)
+            throw ems_exc("GetVia: 'drill' field read failed");
     }
 
     m_LastViaDrill = drill;
@@ -1253,8 +1341,8 @@ bool PCB_EMS_Model::GetVia(srecs::SREC Srec)
     auto pcb_h = m_ConvSet.pcb_height;
     auto corner_approx = m_ConvSet.corner_approximation;
 
-    Via via(a, a, -pcb_t, size, pcb_h + 2 * pcb_t, m_MetalPriority, corner_approx,
-            drill, m_SimBox.materials.metal_top, m_SimBox.materials.hole_fill);
+    Via via(a, a, -pcb_t, size, pcb_h + 2 * pcb_t, m_MetalPriority, corner_approx, drill,
+            m_SimBox.materials.metal_top, m_SimBox.materials.hole_fill);
 
     m_Vias.push_back(via);
 
@@ -1263,7 +1351,7 @@ bool PCB_EMS_Model::GetVia(srecs::SREC Srec)
 
 std::complex<double> PCB_EMS_Model::MovePoint(std::complex<double> Point, bool Move)
 {
-    if(Move)
+    if (Move)
     {
         return Point - m_AuxAxisOrigin;
     }
@@ -1274,20 +1362,16 @@ std::string printMeshSet(std::set<double>& MeshSet)
 {
     std::string str;
     std::set<double>::iterator it = MeshSet.begin();
-    while(it != MeshSet.end())
+    while (it != MeshSet.end())
     {
         str += std::to_string(*it);
         it++;
-        if(it != MeshSet.end())
+        if (it != MeshSet.end())
         {
             str += ",";
         }
     }
     return str;
 }
-
-
-
-
 
 //
