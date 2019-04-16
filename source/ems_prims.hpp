@@ -40,27 +40,21 @@ public:
     ems_exc(const char* Msg) : std::runtime_error(Msg) {}
 };
 
-
 #ifndef M_PI
-#define M_PI        3.14159265358979323846
-#define M_PI_2      (3.14159265358979323846 / 2.0)
+#define M_PI 3.14159265358979323846
+#define M_PI_2 (3.14159265358979323846 / 2.0)
 #endif
-
 
 double deg_to_radian(double degrees);
 std::complex<double> rot_vector(std::complex<double> Vect, double RotAngle);
 bool IsClockWiseOrder(std::vector<std::complex<double>>& Data);
 
-
-
-struct Line
-{
+struct Line {
     std::complex<double> m_Start;
     std::complex<double> m_End;
 };
 
-struct MeshLines
-{
+struct MeshLines {
     std::set<double> X;
     std::set<double> Y;
     std::set<double> Z;
@@ -73,12 +67,16 @@ class ExtrudedPolygon
     double m_Thickness;
     size_t m_Priority;
     std::string m_MaterialName;
+
 public:
-    ExtrudedPolygon(std::vector<std::complex<double>>& Outline, double Z_Height, double Thickness, size_t Priority, std::string& MaterialName);
+    ExtrudedPolygon(std::vector<std::complex<double>>& Outline,
+                    double Z_Height,
+                    double Thickness,
+                    size_t Priority,
+                    std::string& MaterialName);
     std::string GetCSX_Script();
     void GetXML_Primitive(tinyxml2::XMLElement* InsertNode, std::string& GetByMaterial);
 };
-
 
 class Segment
 {
@@ -97,6 +95,7 @@ private:
 
     void GenMeshLines();
     void GenPolyOutline();
+
 public:
     Segment(std::complex<double>& P1,
             std::complex<double>& P2,
@@ -112,13 +111,13 @@ public:
     void GetXML_Primitive(tinyxml2::XMLElement* InsertNode, std::string& Material);
 };
 
-
 class Via
 {
     double m_DrillSize;
     double m_MetalSize;
     Segment m_Cilinder;
     Segment m_Mill;
+
 public:
     Via(std::complex<double>& P1,
         std::complex<double>& P2,
@@ -136,7 +135,6 @@ public:
     void GetXML_Primitive(tinyxml2::XMLElement* InsertNode, std::string& Material);
 };
 
-
 class Zone
 {
     std::vector<std::complex<double>> m_InnerOutline;
@@ -149,15 +147,16 @@ class Zone
     size_t m_Approx;
     Configuration::MaterialProps m_Material;
     double getVectAngle(std::complex<double> U, std::complex<double> V);
+
 public:
     Zone(std::vector<std::complex<double>>& OutlineCenterPts,
-                  double Z,
-                  double W,
-                  double T,
-                  size_t Priority,
-                  size_t Approx,
-                  Configuration::MaterialProps& Material,
-                  bool OutlineIsCenter);
+         double Z,
+         double W,
+         double T,
+         size_t Priority,
+         size_t Approx,
+         Configuration::MaterialProps& Material,
+         bool OutlineIsCenter);
 
     std::string GetCSX_Script();
     MeshLines GetMeshData();
@@ -165,12 +164,9 @@ public:
     void ApproximatePolygon(std::vector<std::complex<double>>& Points, double MaxError);
 };
 
-
 // add approximation back
 
-
-}
-}
+} // namespace pems
+} // namespace kicad_to_ems
 
 #endif // ems_prims_h
-

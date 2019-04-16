@@ -28,13 +28,14 @@ namespace kicad_to_ems
 namespace srecs
 {
 
-
 typedef std::vector<char> charvec_t;
 
 class SREC
 {
 public:
-    SREC(charvec_t::iterator Begin, charvec_t::iterator End) : m_Begin(Begin), m_Current(Begin), m_End(End), m_FirstCall(true) {}
+    SREC(charvec_t::iterator Begin, charvec_t::iterator End)
+        : m_Begin(Begin), m_Current(Begin), m_End(End), m_FirstCall(true)
+    {}
 
     void SetPosition(charvec_t::iterator& Position);
 
@@ -61,8 +62,7 @@ private:
     std::string GetCurString();
 };
 
-
-}
-}
+} // namespace srecs
+} // namespace kicad_to_ems
 
 #endif // srecs_h

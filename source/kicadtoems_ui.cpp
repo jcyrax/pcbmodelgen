@@ -22,14 +22,12 @@
 #include <iterator>
 #include "kicadtoems_ui.hpp"
 
-
 using namespace kicad_to_ems;
-
 
 std::vector<char> ReadFile(const char* filename);
 
-
-KiCAD_to_openEMS::KiCAD_to_openEMS(Configuration& Config, const char* KiCAD_PCB_File) : m_Config(Config)
+KiCAD_to_openEMS::KiCAD_to_openEMS(Configuration& Config, const char* KiCAD_PCB_File)
+    : m_Config(Config)
 {
     // load pcb file
     std::vector<char> pcb_file = ReadFile(KiCAD_PCB_File);
@@ -37,54 +35,39 @@ KiCAD_to_openEMS::KiCAD_to_openEMS(Configuration& Config, const char* KiCAD_PCB_
     // generate models
     m_Model = new ems::PCB_EMS_Model(pcb_file, m_Config);
 }
-KiCAD_to_openEMS::~KiCAD_to_openEMS()
-{
-    delete m_Model;
-}
+KiCAD_to_openEMS::~KiCAD_to_openEMS() { delete m_Model; }
 
 void KiCAD_to_openEMS::WriteModel_Octave(const char* File)
 {
     std::string model_script = GetModel_Octave();
 
     std::ofstream ofile(File, std::ios::out);
-    if(ofile.is_open())
+    if (ofile.is_open())
     {
         ofile.write(model_script.c_str(), model_script.size());
     }
 }
 
-std::string KiCAD_to_openEMS::GetModel_Octave()
-{
-    return m_Model->GetModelScript();
-}
+std::string KiCAD_to_openEMS::GetModel_Octave() { return m_Model->GetModelScript(); }
 
 void KiCAD_to_openEMS::WriteMesh_Octave(const char* File)
 {
     std::string mesh_script = GetMesh_Octave();
 
     std::ofstream ofile(File, std::ios::out);
-    if(ofile.is_open())
+    if (ofile.is_open())
     {
         ofile.write(mesh_script.c_str(), mesh_script.size());
     }
 }
 
-std::string KiCAD_to_openEMS::GetMesh_Octave()
-{
-    return m_Model->GetMeshScript();
-}
-
+std::string KiCAD_to_openEMS::GetMesh_Octave() { return m_Model->GetMeshScript(); }
 
 void KiCAD_to_openEMS::InjectModelData(const char* XML_Settings)
 {
     std::string file_name(XML_Settings);
     m_Model->InjectOpenEMS_Script(file_name);
 }
-
-
-
-
-
 
 std::vector<char> ReadFile(const char* filename)
 {
@@ -106,24 +89,7 @@ std::vector<char> ReadFile(const char* filename)
     vec.reserve(fileSize);
 
     // read the data:
-    vec.insert(vec.begin(),
-               std::istream_iterator<char>(file),
-               std::istream_iterator<char>());
+    vec.insert(vec.begin(), std::istream_iterator<char>(file), std::istream_iterator<char>());
 
     return vec;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
