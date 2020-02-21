@@ -27,6 +27,7 @@
 #include <sstream>
 #include <cstring>
 #include <algorithm>
+//#include <stdio>
 
 #include "kicadtoems_config.hpp"
 
@@ -710,6 +711,7 @@ PCB_EMS_Model::PCB_EMS_Model(srecs::charvec_t& Data, Configuration& Config)
     m_RescueViaDrill = true;
     m_AuxAxisIsOrigin = true;
 
+
     // extract metal and pcb primitives for EMS simulation
     SREC srec(Data.begin(), Data.end());
 
@@ -724,6 +726,11 @@ PCB_EMS_Model::PCB_EMS_Model(srecs::charvec_t& Data, Configuration& Config)
     {
         // print warning about version
         std::cout << "Warning: kicad_pcb file version not 4. May experience some errors";
+        kicad_version = "5.x";
+    }
+    else
+    {
+      kicad_version = "4.x";        
     }
 
     srec.GetNext("setup");
@@ -829,7 +836,15 @@ bool PCB_EMS_Model::GetPCB(srecs::SREC Srec)
     if (!rec.GetChild("layer"))
         throw ems_exc("GetPCB: no 'layer' field");
     record_str = rec.GetRecord();
-    if (record_str.find("Edge.Cuts") != std::string::npos)
+    
+    
+    std::string ll;
+    if (kicad_version == "4.x")
+        ll = "Edge.Cuts";
+    else
+        ll = "\"Edge.Cuts\"";
+        
+    if (record_str.find(ll.c_str()) != std::string::npos)
     {
         // Part of PCB edge layer
         complex<double> endp;
@@ -985,7 +1000,14 @@ bool PCB_EMS_Model::GetPad(srecs::SREC Srec, double ModuleX, double ModuleY, dou
         throw ems_exc("GetPad: no 'layers' field");
     record = data.GetRecord();
     Configuration::MaterialProps material;
-    if (strstr(record.c_str(), "F.Cu") != nullptr)
+    
+    std::string ll = " ";
+    if (kicad_version == "4.x")
+        ll = "F.Cu";
+    else
+        ll = "\"F.Cu\"";
+        
+    if (strstr(record.c_str(), ll.c_str()) != nullptr)
     {
         layer_height = pcb_h;
         material = m_SimBox.materials.metal_top;
@@ -1160,12 +1182,27 @@ bool PCB_EMS_Model::GetZone(SREC Srec)
     layer.insert(layer.begin(), record.begin() + 7, record.end() - 1);
     double height;
     Configuration::MaterialProps material;
-    if (layer == "F.Cu")
+
+    std::string ll;
+    std::string ll2;
+
+    if (kicad_version == "4.x")
+    {
+        ll = "F.Cu";
+        ll2 = "B.Cu";
+    }
+    else
+    {
+        ll = "\"F.Cu\"";
+        ll2 = "\"B.Cu\"";
+    }
+    
+    if (layer == ll.c_str())
     {
         height = m_ConvSet.pcb_height;
         material = m_SimBox.materials.metal_top;
     }
-    else if (layer == "B.Cu")
+    else if (layer == ll2)
     {
         height = -m_ConvSet.pcb_metal_thickness;
         material = m_SimBox.materials.metal_bot;
@@ -1274,7 +1311,18 @@ bool PCB_EMS_Model::GetSegment(SREC Srec)
     b = MovePoint(b, m_AuxAxisIsOrigin);
     double height;
     Configuration::MaterialProps material;
-    if (layer == "F.Cu")
+    
+    std::string ll;
+    if (kicad_version == "4.x")
+    {
+        ll = "F.Cu";
+    }
+    else
+    {
+        ll = "\"F.Cu\"";
+    }
+    
+    if (layer == ll.c_str())
     {
         height = m_ConvSet.pcb_height;
         material = m_SimBox.materials.metal_top;
