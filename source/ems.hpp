@@ -55,6 +55,9 @@ private:
     std::complex<double> m_AuxAxisOrigin;
     bool m_AuxAxisIsOrigin;
 
+
+    std::string kicad_version;
+
     bool m_RescueViaDrill;
     double m_LastViaDrill;
 
