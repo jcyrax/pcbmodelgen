@@ -20,7 +20,7 @@ fdtd_preproc_only = 0;
 disp('openEMS FDTD startup');
 disp('Using Octave script files');
 
-addpath("/mnt/c/openEMS/matlab/"); 
+%addpath("/mnt/c/openEMS/matlab/"); 
 
 %% setup the simulation
 physical_constants;

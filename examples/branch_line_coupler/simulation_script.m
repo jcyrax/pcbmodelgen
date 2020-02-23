@@ -23,7 +23,7 @@ add_field_dump = 1;
 disp('openEMS FDTD startup');
 disp('Using Octave script files');
 
-addpath("/mnt/c/openEMS/matlab/"); 
+%addpath("/mnt/c/openEMS/matlab/"); 
 
 %% setup the simulation
 physical_constants;
