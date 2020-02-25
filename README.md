@@ -25,9 +25,14 @@ sudo make install
 
 ## Usage
 Check out examples directory.
-Execute from examples directory:
+Enter into the selected example folder and Execute the bash script :
 ```
 ./generate_model.sh
 ```
+
 for basic example of usage. It will show model and after
 exit from 3D viewer openEMS will run the simulation and present results.
+
+Note:
+On "Windows 10" it has been tested with the "WLS" Linux Ubuntu App, downloadable from Microsoft Store
+the OpenEMS path must be available on PATH env to run properly.

@@ -23,6 +23,8 @@ add_field_dump = 1;
 disp('openEMS FDTD startup');
 disp('Using Octave script files');
 
+%addpath("/mnt/c/openEMS/matlab/"); 
+
 %% setup the simulation
 physical_constants;
 unit = 1e-3; % all length in mm
@@ -80,10 +82,10 @@ CSX = AddMaterial(CSX, 'box_material');
 CSX = SetMaterialProperty( CSX, 'box_material', 'Epsilon', 1, 'Mue', 1, 'Kappa', 0, 'Sigma', 0, 'Density', 1 );
 
 %load model in CSX structure (model script is output from pcbmodelgen)
-CSX = pcb_model(CSX);
+CSX = kicad_pcb_model(CSX);
 
 %load auto generated grid mesh lines
-model_mesh = pcb_mesh_grid();
+model_mesh = kicad_pcb_mesh();
 
 %define grid (WARNING: check that units is what was used in design)
 CSX = DefineRectGrid(CSX, unit, model_mesh);
