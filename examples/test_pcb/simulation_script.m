@@ -111,7 +111,7 @@ if(post_proc_only==0)
 end
 
 
-% Do post processing and as you normaly would with openEMS and Plots
+% Do post processing as you normaly would with openEMS and Plots
 % ===========================================================================================
 
 freq = linspace( max([1e9,f0-fc]), f0+fc, 501 );
