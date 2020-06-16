@@ -31,8 +31,6 @@
 
 #define s_VERSION "0.2.0"
 
-/*
- */
 int main(int argc, char* argv[])
 {
     bool grid_arg_set = false;
@@ -111,10 +109,10 @@ int main(int argc, char* argv[])
         }
         else
         {
-            std::cerr << "Must include 'SimulationBox' parameters in JSON configuration file";
+            std::cerr << "Must include 'SimulationBox' parameters in JSON configuration file\n";
             exit(-1);
         }
     }
 
-    return 1;
+    return 0;
 }
