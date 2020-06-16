@@ -2,34 +2,33 @@
 % pcbmodelgen usage example (using Octave script files)
 %
 
-
 close all
 clear
 clc
 
-%Skip FDTD and analyze data if previously generated
+% Skip FDTD and analyze data if previously generated
 post_proc_only = 0;
 
-%Show only model geometry no simulation (check before real run)
+% Show only model geometry no simulation (check before real run)
 show_model_only = 0;
 
-%Run preprocessing of FDTD (can use to output model dumps and information)
+% Run preprocessing of FDTD (can use to output model dumps and information)
 fdtd_preproc_only = 0;
 
-%Add E field dump in PCB (use paraview to visualize)
+% Add E field dump in PCB (use paraview to visualize)
 add_field_dump = 1;
 
 
 disp('openEMS FDTD startup');
 disp('Using Octave script files');
 
-%addpath("/mnt/c/openEMS/matlab/"); 
+% addpath("/mnt/c/openEMS/matlab/");
 
-%% setup the simulation
+% setup the simulation
 physical_constants;
 unit = 1e-3; % all length in mm
 
-%% setup FDTD parameter & excitation function
+% setup FDTD parameter & excitation function
 % frequency range of interest
 f_start =  1e9;
 f_stop  =  4e9;
@@ -44,34 +43,31 @@ FDTD = SetGaussExcite(FDTD, f0, f_stop - f0);
 BC = {'MUR' 'MUR' 'MUR' 'MUR' 'MUR' 'MUR'};
 FDTD = SetBoundaryCond( FDTD, BC );
 
-%% setup CSXCAD geometry & mesh
+% setup CSXCAD geometry & mesh
 CSX = InitCSX();
 
-%% Define excitation port
+% Define excitation port
 start = [1.75 -3.45 0];
 stop  = [1.75 -4.95 1];
-%% Priority MUST be > 3
+% Priority MUST be > 3
 [CSX port1] = AddLumpedPort(CSX, 15, 1, 50, start, stop, [0 0 1], true);
 
 start = [32.75 -3.45 0];
 stop  = [32.75 -4.95 1];
-%% Priority MUST be > 3
+% Priority MUST be > 3
 [CSX port2] = AddLumpedPort(CSX, 15, 2, 50, start, stop, [0 0 1], false);
 
 start = [32.75 -24.45 0];
 stop  = [32.75 -25.95 1];
-%% Priority MUST be > 3
+% Priority MUST be > 3
 [CSX port3] = AddLumpedPort(CSX, 15, 3, 50, start, stop, [0 0 1], false);
 
 start = [1.75 -24.45 0];
 stop  = [1.75 -25.95 1];
-%% Priority MUST be > 3
+% Priority MUST be > 3
 [CSX port4] = AddLumpedPort(CSX, 15, 4, 50, start, stop, [0 0 1], false);
 
-
-
-
-%% Setup materials used (WARNING: check that material names are same in config.json)
+% Setup materials used (WARNING: check that material names are same in config.json)
 CSX = AddMaterial(CSX, 'pcb');
 CSX = SetMaterialProperty( CSX, 'pcb', 'Epsilon', 4.2, 'Mue', 1, 'Kappa', 0, 'Sigma', 0, 'Density', 1 );
 CSX = AddMetal(CSX, 'metal_top');
@@ -81,13 +77,13 @@ CSX = SetMaterialProperty( CSX, 'drill_fill', 'Epsilon', 1, 'Mue', 1, 'Kappa', 0
 CSX = AddMaterial(CSX, 'box_material');
 CSX = SetMaterialProperty( CSX, 'box_material', 'Epsilon', 1, 'Mue', 1, 'Kappa', 0, 'Sigma', 0, 'Density', 1 );
 
-%load model in CSX structure (model script is output from pcbmodelgen)
+% load model in CSX structure (model script is output from pcbmodelgen)
 CSX = kicad_pcb_model(CSX);
 
-%load auto generated grid mesh lines
+% load auto generated grid mesh lines
 model_mesh = kicad_pcb_mesh();
 
-%define grid (WARNING: check that units is what was used in design)
+% define grid (WARNING: check that units is what was used in design)
 CSX = DefineRectGrid(CSX, unit, model_mesh);
 
 
@@ -102,7 +98,7 @@ end
 disp('Model import and simulation setup done');
 
 
-%% prepare simulation folder
+% prepare simulation folder
 Sim_Path = 'tmp';
 Sim_CSX = 'simulation.xml';
 
@@ -139,10 +135,10 @@ if(post_proc_only==0)
     end
 end
 
-
 % Do post processing as you normaly would with openEMS
-%===========================================================================================
-%% postprocessing & do the plots
+% ===========================================================================================
+% postprocessing & do the plots
+
 freq = linspace( max([1e9,f0-fc]), f0+fc, 501 );
 
 U = ReadUI( {'port_ut1','port_ut2','port_ut3','port_ut4','et'}, [Sim_Path '/'], freq ); % time domain/freq domain voltage
@@ -180,7 +176,6 @@ ylabel( 'impedance Z_{in} / Ohm' );
 legend( 'real', 'imag' );
 print -dpng Z.png
 
-
 % plot some S parameters
 U0 = U.FD{1}.val + I.FD{1}.val * 50;
 U1 = U.FD{1}.val;
@@ -201,15 +196,9 @@ log_s41 = 20*log10(abs(s41));
 
 freq_MHz = freq/1e6;
 
-
 figure
 plot( freq_MHz, log_s11, 'k;S11;', freq_MHz, log_s21, 'r;S21;', freq_MHz, log_s31, 'g;S31;', freq_MHz, log_s41, 'b;S41;');
 grid on
 title( 'S parameters' );
 xlabel( 'frequency f / MHz' );
 print -dpng S_params.png
-
-
-
-
-
