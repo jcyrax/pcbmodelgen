@@ -9,7 +9,7 @@ clc
 % Skip FDTD and analyze data if previously generated
 post_proc_only = 0;
 
-%sssShow only model geometry no simulation (check before real run)
+% Show only model geometry no simulation (check before real run)
 show_model_only = 0;
 
 % Run preprocessing of FDTD (can use to output model dumps and information)
