@@ -1,4 +1,3 @@
-
 PCB_FILE = pcb.kicad_pcb
 
 CONFIG_FILE = config.json
@@ -20,11 +19,3 @@ clean:
 	rm -rf kicad_pcb_mesh.m
 	rm -rf kicad_pcb_model.m
 	rm -rf *.kicad_pcb-bak
-
-
-
-
-
-
-# yardbird.kicad_pcb
-# yardbird.pro
