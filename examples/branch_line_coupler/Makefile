@@ -1,5 +1,5 @@
 pcb = pcb.kicad_pcb
-config = config.json
+config = pcbmodelgen.json
 
 all: run sim
 
