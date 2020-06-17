@@ -18,7 +18,7 @@ fdtd_preproc_only = 0;
 disp('openEMS FDTD startup');
 disp('Using Octave script files');
 
-% Using .octaverc
+% Using .octaverc instead
 % addpath("/mnt/c/openEMS/matlab/");
 
 % Setup the simulation
@@ -27,9 +27,9 @@ unit = 1e-3; % all length in mm
 
 % Setup FDTD parameter & excitation function
 % frequency range of interest
-f_start =  1e9;
-f_stop  =  4e9;
-f0 = 0.5*(f_start+f_stop);
+f_start = 1e9;
+f_stop  = 4e9;
+f0 = 0.5 * (f_start+f_stop);
 fc = f_stop - f0;
 
 % Setup exitation types
@@ -72,7 +72,7 @@ CSX = DefineRectGrid(CSX, unit, model_mesh);
 disp('Model import and simulation setup done');
 
 % Prepare simulation folder
-Sim_Path = 'tmp';
+Sim_Path = './tmp';
 Sim_CSX = 'simulation.xml';
 
 if(post_proc_only==0)
@@ -86,25 +86,26 @@ if(post_proc_only==0)
     disp('Done');
 
     disp('Showing geometry');
-	% show the structure
-	CSXGeomPlot( [Sim_Path '/' Sim_CSX] );
 
-	if(show_model_only)
-		disp('Showing only model - exit');
-		exit();
-	end
+    % show the structure
+    CSXGeomPlot( [Sim_Path '/' Sim_CSX] );
 
-	cmd_params = '--debug-PEC --debug-material';
-	if(fdtd_preproc_only)
+    if(show_model_only)
+        disp('Showing only model - exit');
+        exit();
+    end
+
+    cmd_params = '--debug-PEC --debug-material';
+    if(fdtd_preproc_only)
         cmd_params = '--debug-PEC --debug-material --no-simulation';
     end
 
     disp('Starting openEMS');
 
-	% run openEMS
-	RunOpenEMS( Sim_Path, Sim_CSX, cmd_params);
+    % run openEMS
+    RunOpenEMS( Sim_Path, Sim_CSX, cmd_params);
 
-	if(fdtd_preproc_only)
+    if(fdtd_preproc_only)
         disp('Only preprocessing - exit');
         exit();
     end
