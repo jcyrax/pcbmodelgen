@@ -1,7 +1,7 @@
 {
     "conversion_settings" :
     {
-        "pcb_height" : 1.6,
+        "pcb_height" : 1.0,
         "pcb_metal_thickness" : 0.1,
         "pcb_metal_zero_thick" : true,
         "corner_approximation" : 3
@@ -23,9 +23,9 @@
             },
             "max_cell_size" :
             {
-                "X" : 1.6,
-                "Y" : 1.6,
-                "Z" : 1.6
+                "X" : 1.34,
+                "Y" : 1.34,
+                "Z" : 1.34
             }
         },
         "manual_mesh" :
@@ -40,7 +40,7 @@
             ],
             "Z" :
             [
-                0, 1.6
+                0, 1.0
             ]
         }
     },
