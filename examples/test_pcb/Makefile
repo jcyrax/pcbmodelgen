@@ -1,11 +1,11 @@
 pcb = test_pcb.kicad_pcb
-config_file = pcbmodelgen.json
+config = pcbmodelgen.json
 
 all: run sim
 
 # Generate octave script files with model and mesh grid
 run:
-	pcbmodelgen -p $(pcb) -c $(config_file) -m kicad_pcb_model.m -g kicad_pcb_mesh.m
+	pcbmodelgen -p $(pcb) -c $(config) -m kicad_pcb_model.m -g kicad_pcb_mesh.m
 
 # Run simulation using generated model and mesh
 sim:
