@@ -725,7 +725,7 @@ PCB_EMS_Model::PCB_EMS_Model(srecs::charvec_t& Data, Configuration& Config)
     if (srec.GetRecord() != "(version 4)")
     {
         // print warning about version
-        std::cout << "Warning: kicad_pcb file version not 4. May experience some errors";
+        std::cout << "Warning: kicad_pcb file version not 4, may experience some issues\n";
         kicad_version = "5.x";
     }
     else

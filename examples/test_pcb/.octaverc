@@ -1,0 +1,2 @@
+addpath('/usr/share/octave/packages/openems-0.0.35')
+addpath('/usr/local/share/CSXCAD/matlab/')
