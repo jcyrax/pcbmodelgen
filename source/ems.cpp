@@ -711,7 +711,6 @@ PCB_EMS_Model::PCB_EMS_Model(srecs::charvec_t& Data, Configuration& Config)
     m_RescueViaDrill = true;
     m_AuxAxisIsOrigin = true;
 
-
     // extract metal and pcb primitives for EMS simulation
     SREC srec(Data.begin(), Data.end());
 
@@ -722,15 +721,31 @@ PCB_EMS_Model::PCB_EMS_Model(srecs::charvec_t& Data, Configuration& Config)
         return;
     }
     srec.GetChild();
+
+    // (kicad_pcb (version 4) (host pcbnew "(2015-04-25 BZR 5623)-product")
+    // (kicad_pcb (version 20171130) (host pcbnew "(5.0.0-rc2-165-g94891b75f)")
+    // (kicad_pcb (version 20171130) (host pcbnew "(5.0.0-rc2-165-g94891b75f)")
+    // (kicad_pcb (version 20171130) (host pcbnew 5.1.6-c6e7f7d~86~ubuntu20.04.1)
+    // (kicad_pcb (version 20200104) (host pcbnew "(5.99.0-879-ga0698723b)")
+
     if (srec.GetRecord() != "(version 4)")
     {
-        // print warning about version
-        std::cout << "Warning: kicad_pcb file version not 4, may experience some issues\n";
-        kicad_version = "5.x";
+        std::cout << "Warning: kicad_pcb file version 4.x, may experience some issues\n";
+        if (srec.GetRecord() == "(version 20171130)")
+        {
+            kicad_version = "5.x";
+        }
+        else
+        {
+            kicad_version = "5.99";
+        }
+
+        srec.GetNext();
+        std::cout << "kicad_pcb version " << srec.GetRecord() << "\n";
     }
     else
     {
-      kicad_version = "4.x";        
+      kicad_version = "4.x";
     }
 
     srec.GetNext("setup");
@@ -836,14 +851,14 @@ bool PCB_EMS_Model::GetPCB(srecs::SREC Srec)
     if (!rec.GetChild("layer"))
         throw ems_exc("GetPCB: no 'layer' field");
     record_str = rec.GetRecord();
-    
-    
+
+
     std::string ll;
-    if (kicad_version == "4.x")
+    if (kicad_version != "5.99")
         ll = "Edge.Cuts";
     else
         ll = "\"Edge.Cuts\"";
-        
+
     if (record_str.find(ll.c_str()) != std::string::npos)
     {
         // Part of PCB edge layer
@@ -1000,13 +1015,13 @@ bool PCB_EMS_Model::GetPad(srecs::SREC Srec, double ModuleX, double ModuleY, dou
         throw ems_exc("GetPad: no 'layers' field");
     record = data.GetRecord();
     Configuration::MaterialProps material;
-    
+
     std::string ll = " ";
-    if (kicad_version == "4.x")
+    if (kicad_version != "5.99")
         ll = "F.Cu";
     else
         ll = "\"F.Cu\"";
-        
+
     if (strstr(record.c_str(), ll.c_str()) != nullptr)
     {
         layer_height = pcb_h;
@@ -1186,7 +1201,7 @@ bool PCB_EMS_Model::GetZone(SREC Srec)
     std::string ll;
     std::string ll2;
 
-    if (kicad_version == "4.x")
+    if (kicad_version != "5.99")
     {
         ll = "F.Cu";
         ll2 = "B.Cu";
@@ -1196,7 +1211,7 @@ bool PCB_EMS_Model::GetZone(SREC Srec)
         ll = "\"F.Cu\"";
         ll2 = "\"B.Cu\"";
     }
-    
+
     if (layer == ll.c_str())
     {
         height = m_ConvSet.pcb_height;
@@ -1311,9 +1326,9 @@ bool PCB_EMS_Model::GetSegment(SREC Srec)
     b = MovePoint(b, m_AuxAxisIsOrigin);
     double height;
     Configuration::MaterialProps material;
-    
+
     std::string ll;
-    if (kicad_version == "4.x")
+    if (kicad_version != "5.99")
     {
         ll = "F.Cu";
     }
@@ -1321,7 +1336,7 @@ bool PCB_EMS_Model::GetSegment(SREC Srec)
     {
         ll = "\"F.Cu\"";
     }
-    
+
     if (layer == ll.c_str())
     {
         height = m_ConvSet.pcb_height;
