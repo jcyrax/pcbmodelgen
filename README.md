@@ -45,9 +45,18 @@ addpath('/usr/share/octave/packages/openems-0.0.35/')
 addpath('/usr/local/share/CSXCAD/matlab/')
 ```
 
-Check out examples directory.
+The tool can be used as in:
 
-Inside each example folder execute the make command as in:
+```
+# Example
+pcbmodelgen -p board.kicad_pcb -c pcbmodelgen.json
+
+# Extra help
+pcbmodelgen -h
+```
+
+There are some examples in the example directory. Inside each example folder has a makefile to run the example.
+
 ```
 # To run everything just type
 make
@@ -70,7 +79,7 @@ On `Windows 10` it has been tested with the WLS Linux Ubuntu App, downloaded fro
 The AppCSXCAD and the openEMS must be available on PATH environment variable so pcbgenmod can find required tools.
 
 
-## Json Fields
+## PCBModelGen Configuration (.json)
 
 Description of some fields in pcbmodelgen config .json
 
