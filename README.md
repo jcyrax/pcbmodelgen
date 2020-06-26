@@ -35,9 +35,16 @@ sudo make install
 
 ## Usage
 
+OpenEMS should be installed and the octave paths should be configured in `~/.octaverc` as in:
+
+```
+addpath('/usr/share/octave/packages/openems-0.0.35/')
+addpath('/usr/local/share/CSXCAD/matlab/')
+```
+
 Check out examples directory.
 
-Inside each example folder and execute the make command as in:
+Inside each example folder execute the make command as in:
 ```
 # To run everything just type
 make
@@ -54,7 +61,7 @@ make clean
 
 These steps will show model using the AppCSXCAD and after exit from its 3D viewer, the next step is to run the simulation with openEMS and present results.
 
-Note for Windows users:
+### Windows users:
 
 On `Windows 10` it has been tested with the WLS Linux Ubuntu App, downloaded from Microsoft Store.
 The AppCSXCAD and the openEMS must be available on PATH environment variable so pcbgenmod can find required tools.
