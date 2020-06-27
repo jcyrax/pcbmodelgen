@@ -31,6 +31,8 @@
 
 #define s_VERSION "0.2.0"
 
+int g_ERROR { 0 }; // zero initialized
+
 int main(int argc, char* argv[])
 {
     bool grid_arg_set = false;
@@ -115,5 +117,5 @@ int main(int argc, char* argv[])
         }
     }
 
-    return 0;
+    return g_ERROR;
 }
