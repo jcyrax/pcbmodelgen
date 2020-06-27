@@ -128,10 +128,10 @@ set(h1, 'Color', [1 0 0]);
 set(h2, 'Linewidth', 2);
 set(h2, 'Color', [0 0 0]);
 grid on
-title('time domain voltage');
-xlabel('time t / ns');
-ylabel(ax(1), 'voltage ut1 / V');
-ylabel(ax(2), 'voltage et / V');
+title('Voltage vs Time');
+xlabel('Time (ns)');
+ylabel(ax(1), 'ut1 Voltage (V)');
+ylabel(ax(2), 'et Voltage (V)');
 
 % Now make the y-axis symmetric to y=0 (align zeros of y1 and y2)
 y1 = ylim(ax(1));
@@ -143,13 +143,13 @@ print -dpng Ut.png
 % Plot feed point impedance
 figure
 Zin = U.FD{1}.val ./ I.FD{1}.val;
-plot(freq/1e6, real(Zin), 'k-', 'Linewidth', 2);
+plot(freq / 1e6, real(Zin), 'k-', 'Linewidth', 2);
 hold on
 grid on
-plot(freq/1e6, imag(Zin), 'r--', 'Linewidth', 2);
-title('feed point impedance');
-xlabel('frequency f / MHz');
-ylabel('impedance Z_{in} / Ohm');
+plot(freq / 1e6, imag(Zin), 'r--', 'Linewidth', 2);
+title('Feed Point Impedance');
+xlabel('Frequency (MHz)');
+ylabel('Z_{in} Impedance (Ohm)');
 legend('real', 'imag');
 print -dpng Z.png
 
@@ -162,7 +162,7 @@ if_ref = I.FD{1}.val - if_inc;
 s11 = uf_ref ./ uf_inc;
 plot(freq / 1e6, 20 * log10(abs(s11)), 'k-', 'Linewidth', 2);
 grid on
-title('reflection coefficient S_{11}');
-xlabel('frequency f / MHz');
-ylabel('reflection coefficient |S_{11}|');
+title('Reflection Coefficient S_{11}');
+xlabel('Frequency (MHz)');
+ylabel('Reflection Coefficient |S_{11}|');
 print -dpng S11.png
