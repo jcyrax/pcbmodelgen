@@ -532,7 +532,7 @@ std::string PCB_EMS_Model::GetMeshScript()
                 {
                     if (j == 0)
                     {
-                        str += "\tWARNING mesh gap size violate configuration at columns: ";
+                        str += "\tWARNING: mesh gap size violate configuration at columns: ";
                     }
                     str += std::to_string(bad_gap_indices[j]) + " ";
                 }
@@ -589,7 +589,7 @@ std::string PCB_EMS_Model::GetMeshScript()
                 {
                     if (j == 0)
                     {
-                        str += "\tWARNING mesh gap ratio violate configuration at columns: ";
+                        str += "\tWARNING: mesh gap ratio violate configuration at columns: ";
                     }
                     str += std::to_string(bad_gap_indices[j]) + " ";
                 }
@@ -659,6 +659,7 @@ std::string PCB_EMS_Model::GetMeshScript()
                     "ERROR: mesh gap size too large. Configured max size %f, but actual size %f\n",
                     max_gap, size_left > size_right ? size_left : size_right);
                 warning = true;
+                g_ERROR = 1;
             }
             if (size_left < min_gap || size_right < min_gap)
             {
@@ -666,6 +667,7 @@ std::string PCB_EMS_Model::GetMeshScript()
                     "ERROR: mesh gap size too small. Configured min size %f, but actual size %f\n",
                     min_gap, size_left < size_right ? size_left : size_right);
                 warning = true;
+                g_ERROR = 1;
             }
 
             it2++;
@@ -1051,14 +1053,21 @@ bool PCB_EMS_Model::GetPad(srecs::SREC Srec, double ModuleX, double ModuleY, dou
         record = data.GetRecord();
         if (strstr(shape, "circle") != nullptr)
         {
-            if (sscanf(record.c_str(), "(drill %lf", &drill_x) != 1)
-                throw ems_exc("GetPad: 'drill' field read failed");
+            if (sscanf(record.c_str(), "(drill %lf", &drill_x) != 1) {
+                throw ems_exc("GetPad: cicle 'drill' field read failed (circle)");
+            }
+
             drill_y = drill_x;
         }
         else if (strstr(shape, "oval") != nullptr)
         {
             if (sscanf(record.c_str(), "(drill oval %lf %lf", &drill_x, &drill_y) != 2)
-                throw ems_exc("GetPad: 'drill' field read failed");
+            {
+                if (sscanf(record.c_str(), "(drill %lf", &drill_x) != 1)
+                    throw ems_exc("GetPad: oval 'drill' field read failed");
+
+                drill_y = drill_x;
+            }
         }
     }
 
@@ -1190,9 +1199,10 @@ bool PCB_EMS_Model::GetZone(SREC Srec)
     if (Srec.GetRecName() != "zone")
         return false;
 
-    // layer
-    if (!Srec.GetChild("layer"))
-        throw ems_exc("GetZone: no 'layer' field");
+    if (! (Srec.GetChild("layer") || Srec.GetChild("layers")) ) {
+        throw ems_exc("GetZone: no 'layer/layers' field");
+    }
+
     record = Srec.GetRecord();
     layer.insert(layer.begin(), record.begin() + 7, record.end() - 1);
     double height;
@@ -1200,16 +1210,19 @@ bool PCB_EMS_Model::GetZone(SREC Srec)
 
     std::string ll;
     std::string ll2;
+    std::string ll3;
 
     if (kicad_version != "5.99")
     {
         ll = "F.Cu";
         ll2 = "B.Cu";
+        ll3 = "F&B.Cu";
     }
     else
     {
         ll = "\"F.Cu\"";
         ll2 = "\"B.Cu\"";
+        ll3 = "\"F&B.Cu\"";
     }
 
     if (layer == ll.c_str())
@@ -1219,6 +1232,14 @@ bool PCB_EMS_Model::GetZone(SREC Srec)
     }
     else if (layer == ll2)
     {
+        height = -m_ConvSet.pcb_metal_thickness;
+        material = m_SimBox.materials.metal_bot;
+    }
+    else if (layer == ll3)
+    {
+        height = m_ConvSet.pcb_height;
+        material = m_SimBox.materials.metal_top;
+
         height = -m_ConvSet.pcb_metal_thickness;
         material = m_SimBox.materials.metal_bot;
     }
