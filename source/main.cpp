@@ -31,7 +31,7 @@
 
 #define s_VERSION "0.2.0"
 
-int g_ERROR { 0 }; // zero initialized
+int g_ERROR { 0 };
 
 int main(int argc, char* argv[])
 {
