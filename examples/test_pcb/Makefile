@@ -9,7 +9,7 @@ run:
 
 # Run simulation using generated model and mesh
 sim:
-	octave --persist simulation_script.m
+	octave --silent --persist simulation_script.m
 
 clean:
 	rm -rf tmp/
@@ -18,3 +18,4 @@ clean:
 	rm -f *.png
 	rm -f fp-info-cache
 	rm -rf *.kicad_pcb-bak
+	rm -rf octave-workspace

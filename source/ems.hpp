@@ -23,6 +23,8 @@
 #include "ems_prims.hpp"
 #include <tinyxml2.h>
 
+extern int g_ERROR;
+
 namespace kicad_to_ems
 {
 

@@ -532,7 +532,7 @@ std::string PCB_EMS_Model::GetMeshScript()
                 {
                     if (j == 0)
                     {
-                        str += "\tWARNING mesh gap size violate configuration at columns: ";
+                        str += "\tWARNING: mesh gap size violate configuration at columns: ";
                     }
                     str += std::to_string(bad_gap_indices[j]) + " ";
                 }
@@ -589,7 +589,7 @@ std::string PCB_EMS_Model::GetMeshScript()
                 {
                     if (j == 0)
                     {
-                        str += "\tWARNING mesh gap ratio violate configuration at columns: ";
+                        str += "\tWARNING: mesh gap ratio violate configuration at columns: ";
                     }
                     str += std::to_string(bad_gap_indices[j]) + " ";
                 }
@@ -659,6 +659,7 @@ std::string PCB_EMS_Model::GetMeshScript()
                     "ERROR: mesh gap size too large. Configured max size %f, but actual size %f\n",
                     max_gap, size_left > size_right ? size_left : size_right);
                 warning = true;
+                g_ERROR = 1;
             }
             if (size_left < min_gap || size_right < min_gap)
             {
@@ -666,6 +667,7 @@ std::string PCB_EMS_Model::GetMeshScript()
                     "ERROR: mesh gap size too small. Configured min size %f, but actual size %f\n",
                     min_gap, size_left < size_right ? size_left : size_right);
                 warning = true;
+                g_ERROR = 1;
             }
 
             it2++;
@@ -711,7 +713,6 @@ PCB_EMS_Model::PCB_EMS_Model(srecs::charvec_t& Data, Configuration& Config)
     m_RescueViaDrill = true;
     m_AuxAxisIsOrigin = true;
 
-
     // extract metal and pcb primitives for EMS simulation
     SREC srec(Data.begin(), Data.end());
 
@@ -722,15 +723,31 @@ PCB_EMS_Model::PCB_EMS_Model(srecs::charvec_t& Data, Configuration& Config)
         return;
     }
     srec.GetChild();
+
+    // (kicad_pcb (version 4) (host pcbnew "(2015-04-25 BZR 5623)-product")
+    // (kicad_pcb (version 20171130) (host pcbnew "(5.0.0-rc2-165-g94891b75f)")
+    // (kicad_pcb (version 20171130) (host pcbnew "(5.0.0-rc2-165-g94891b75f)")
+    // (kicad_pcb (version 20171130) (host pcbnew 5.1.6-c6e7f7d~86~ubuntu20.04.1)
+    // (kicad_pcb (version 20200104) (host pcbnew "(5.99.0-879-ga0698723b)")
+
     if (srec.GetRecord() != "(version 4)")
     {
-        // print warning about version
-        std::cout << "Warning: kicad_pcb file version not 4, may experience some issues\n";
-        kicad_version = "5.x";
+        std::cout << "Warning: kicad_pcb file version 4.x, may experience some issues\n";
+        if (srec.GetRecord() == "(version 20171130)")
+        {
+            kicad_version = "5.x";
+        }
+        else
+        {
+            kicad_version = "5.99";
+        }
+
+        srec.GetNext();
+        std::cout << "kicad_pcb version " << srec.GetRecord() << "\n";
     }
     else
     {
-      kicad_version = "4.x";        
+      kicad_version = "4.x";
     }
 
     srec.GetNext("setup");
@@ -836,14 +853,14 @@ bool PCB_EMS_Model::GetPCB(srecs::SREC Srec)
     if (!rec.GetChild("layer"))
         throw ems_exc("GetPCB: no 'layer' field");
     record_str = rec.GetRecord();
-    
-    
+
+
     std::string ll;
-    if (kicad_version == "4.x")
+    if (kicad_version != "5.99")
         ll = "Edge.Cuts";
     else
         ll = "\"Edge.Cuts\"";
-        
+
     if (record_str.find(ll.c_str()) != std::string::npos)
     {
         // Part of PCB edge layer
@@ -1000,13 +1017,13 @@ bool PCB_EMS_Model::GetPad(srecs::SREC Srec, double ModuleX, double ModuleY, dou
         throw ems_exc("GetPad: no 'layers' field");
     record = data.GetRecord();
     Configuration::MaterialProps material;
-    
+
     std::string ll = " ";
-    if (kicad_version == "4.x")
+    if (kicad_version != "5.99")
         ll = "F.Cu";
     else
         ll = "\"F.Cu\"";
-        
+
     if (strstr(record.c_str(), ll.c_str()) != nullptr)
     {
         layer_height = pcb_h;
@@ -1036,14 +1053,21 @@ bool PCB_EMS_Model::GetPad(srecs::SREC Srec, double ModuleX, double ModuleY, dou
         record = data.GetRecord();
         if (strstr(shape, "circle") != nullptr)
         {
-            if (sscanf(record.c_str(), "(drill %lf", &drill_x) != 1)
-                throw ems_exc("GetPad: 'drill' field read failed");
+            if (sscanf(record.c_str(), "(drill %lf", &drill_x) != 1) {
+                throw ems_exc("GetPad: cicle 'drill' field read failed (circle)");
+            }
+
             drill_y = drill_x;
         }
         else if (strstr(shape, "oval") != nullptr)
         {
             if (sscanf(record.c_str(), "(drill oval %lf %lf", &drill_x, &drill_y) != 2)
-                throw ems_exc("GetPad: 'drill' field read failed");
+            {
+                if (sscanf(record.c_str(), "(drill %lf", &drill_x) != 1)
+                    throw ems_exc("GetPad: oval 'drill' field read failed");
+
+                drill_y = drill_x;
+            }
         }
     }
 
@@ -1175,9 +1199,10 @@ bool PCB_EMS_Model::GetZone(SREC Srec)
     if (Srec.GetRecName() != "zone")
         return false;
 
-    // layer
-    if (!Srec.GetChild("layer"))
-        throw ems_exc("GetZone: no 'layer' field");
+    if (! (Srec.GetChild("layer") || Srec.GetChild("layers")) ) {
+        throw ems_exc("GetZone: no 'layer/layers' field");
+    }
+
     record = Srec.GetRecord();
     layer.insert(layer.begin(), record.begin() + 7, record.end() - 1);
     double height;
@@ -1185,18 +1210,21 @@ bool PCB_EMS_Model::GetZone(SREC Srec)
 
     std::string ll;
     std::string ll2;
+    std::string ll3;
 
-    if (kicad_version == "4.x")
+    if (kicad_version != "5.99")
     {
         ll = "F.Cu";
         ll2 = "B.Cu";
+        ll3 = "F&B.Cu";
     }
     else
     {
         ll = "\"F.Cu\"";
         ll2 = "\"B.Cu\"";
+        ll3 = "\"F&B.Cu\"";
     }
-    
+
     if (layer == ll.c_str())
     {
         height = m_ConvSet.pcb_height;
@@ -1204,6 +1232,14 @@ bool PCB_EMS_Model::GetZone(SREC Srec)
     }
     else if (layer == ll2)
     {
+        height = -m_ConvSet.pcb_metal_thickness;
+        material = m_SimBox.materials.metal_bot;
+    }
+    else if (layer == ll3)
+    {
+        height = m_ConvSet.pcb_height;
+        material = m_SimBox.materials.metal_top;
+
         height = -m_ConvSet.pcb_metal_thickness;
         material = m_SimBox.materials.metal_bot;
     }
@@ -1311,9 +1347,9 @@ bool PCB_EMS_Model::GetSegment(SREC Srec)
     b = MovePoint(b, m_AuxAxisIsOrigin);
     double height;
     Configuration::MaterialProps material;
-    
+
     std::string ll;
-    if (kicad_version == "4.x")
+    if (kicad_version != "5.99")
     {
         ll = "F.Cu";
     }
@@ -1321,7 +1357,7 @@ bool PCB_EMS_Model::GetSegment(SREC Srec)
     {
         ll = "\"F.Cu\"";
     }
-    
+
     if (layer == ll.c_str())
     {
         height = m_ConvSet.pcb_height;
