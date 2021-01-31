@@ -639,6 +639,7 @@ std::string PCB_EMS_Model::GetMeshScript()
             double size_left = *it1 - *it0;
             double size_right = *it2 - *it1;
             double gap_ratio;
+
             if (size_left < size_right)
             {
                 gap_ratio = size_right / size_left;
@@ -647,6 +648,7 @@ std::string PCB_EMS_Model::GetMeshScript()
             {
                 gap_ratio = size_left / size_right;
             }
+
             if (gap_ratio > m_MeshParams.automatic_mesh.smth_neighbor_size_diff)
             {
                 printf("WARNING: mesh gap ratio deviation. Configured max ratio %f, but actual "
@@ -654,7 +656,10 @@ std::string PCB_EMS_Model::GetMeshScript()
                        m_MeshParams.automatic_mesh.smth_neighbor_size_diff, gap_ratio);
                 warning = true;
             }
-            if (size_left > max_gap || size_right > max_gap)
+
+            auto max_gap_err = max_gap * GAP_ERROR;
+
+            if (size_left > max_gap + max_gap_err || size_right > max_gap + max_gap_err)
             {
                 printf(
                     "ERROR: mesh gap size too large. Configured max size %f, but actual size %f\n",
@@ -662,7 +667,10 @@ std::string PCB_EMS_Model::GetMeshScript()
                 warning = true;
                 g_ERROR = 1;
             }
-            if (size_left < min_gap || size_right < min_gap)
+
+            auto min_gap_err = min_gap * GAP_ERROR;
+
+            if (size_left < min_gap - min_gap_err || size_right < min_gap - min_gap_err)
             {
                 printf(
                     "ERROR: mesh gap size too small. Configured min size %f, but actual size %f\n",

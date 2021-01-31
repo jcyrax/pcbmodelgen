@@ -44,6 +44,9 @@ public:
     void InjectOpenEMS_Script(const std::string& SourceFile);
 
 private:
+    // error for gap size comparison
+    static constexpr double GAP_ERROR = 0.01;
+
     std::vector<pems::Segment> m_Segments;
     std::vector<pems::Via> m_Vias;
     std::vector<pems::Zone> m_Polys;
