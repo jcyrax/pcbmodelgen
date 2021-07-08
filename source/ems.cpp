@@ -19,6 +19,7 @@
 
 #include "ems.hpp"
 
+#include <limits>
 #include <tinyxml2.h>
 #include <sstream>
 #include <iostream>
