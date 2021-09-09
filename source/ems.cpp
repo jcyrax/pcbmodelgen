@@ -1040,15 +1040,8 @@ bool PCB_EMS_Model::GetPad(srecs::SREC Srec, double ModuleX, double ModuleY, dou
     }
     else
     {
+        layer_height = -pcb_t;
         material = m_SimBox.materials.metal_bot;
-        if (pcb_t == 0.0)
-        {
-            layer_height = -pcb_t;
-        }
-        else
-        {
-            layer_height = -pcb_h - pcb_t;
-        }
     }
 
     double drill_x = 0;
