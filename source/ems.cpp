@@ -854,7 +854,7 @@ bool PCB_EMS_Model::GetPCB(srecs::SREC Srec)
     std::string record_str;
     std::string rec_name = Srec.GetRecName();
 
-    if (rec_name != "gr_line" && rec_name != "gr_circle" && rec_name != "gr_arc")
+    if (rec_name != "gr_line" && rec_name != "gr_circle" && rec_name != "gr_arc" && rec_name != "gr_rect")
         return false;
 
     // extract layer information
@@ -888,7 +888,7 @@ bool PCB_EMS_Model::GetPCB(srecs::SREC Srec)
         y = -y;
         endp = complex<double>(x, y);
 
-        if (rec_name == "gr_line" || rec_name == "gr_arc")
+        if (rec_name == "gr_line" || rec_name == "gr_arc" || rec_name == "gr_rect")
         {
             rec = Srec;
             if (!rec.GetChild("start"))
@@ -926,6 +926,30 @@ bool PCB_EMS_Model::GetPCB(srecs::SREC Srec)
             Line line;
             line.m_Start = MovePoint(startp, m_AuxAxisIsOrigin);
             line.m_End = MovePoint(endp, m_AuxAxisIsOrigin);
+            m_PCB_OutlineElements.push_back(line);
+        }
+        else if (rec_name == "gr_rect")
+        {
+            // add four lines for every rectangle
+            
+            Line line;
+            complex<double> start = MovePoint(startp, m_AuxAxisIsOrigin),
+                end = MovePoint(endp, m_AuxAxisIsOrigin);
+
+            line.m_Start = start;
+            line.m_End   = complex<double>(end.real(), start.imag());
+            m_PCB_OutlineElements.push_back(line);
+
+            line.m_Start = complex<double>(end.real(), start.imag());
+            line.m_End   = end;
+            m_PCB_OutlineElements.push_back(line);
+            
+            line.m_Start = end;
+            line.m_End   = complex<double>(start.real(), end.imag());
+            m_PCB_OutlineElements.push_back(line);
+            
+            line.m_Start = complex<double>(start.real(), end.imag());;
+            line.m_End   = start;
             m_PCB_OutlineElements.push_back(line);
         }
         else if (rec_name == "gr_arc")
