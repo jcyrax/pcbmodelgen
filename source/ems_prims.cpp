@@ -514,9 +514,19 @@ double Zone::getVectAngle(std::complex<double> U, std::complex<double> V)
 {
     double dot_prod = U.real() * V.real() + U.imag() * V.imag();
     double mag_prod = abs(U) * abs(V);
-    double angle = acos(dot_prod / mag_prod);
-    double phase_diff = angle;
-    return phase_diff;
+    double angle = 0;
+
+    if (dot_prod / mag_prod <= -1.0) {
+        angle = M_PI;
+    } else if (dot_prod / mag_prod >= 1.0) {
+        angle = 0;
+    } else {
+        // acos(x) returns NaN when input outside of -1 <= x <= 1
+        // this is not guaranteed when using floats
+        angle = acos(dot_prod / mag_prod);
+    }
+    
+    return angle;
 }
 
 void pems::insert_arc(std::vector<std::complex<double>>& Points,
