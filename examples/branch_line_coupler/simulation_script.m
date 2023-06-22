@@ -24,6 +24,9 @@ disp('Using Octave script files');
 % Using .octaverc instead
 % addpath("/mnt/c/openEMS/matlab/");
 
+% On *buntu, `octave-openems` provides these packages instead:
+pkg load openems csxcad
+
 % Setup the simulation
 physical_constants;
 unit = 1e-3; % all length in mm
@@ -37,7 +40,7 @@ fc = f_stop - f0;
 
 % Setup exitation types
 FDTD = InitFDTD('NrTs', 40000, 'EndCriteria', 1e-3);
-FDTD = SetGaussExcite(FDTD, f0, f_stop - f0);
+FDTD = SetGaussExcite(FDTD, f0, fc);
 
 % boundary conditions
 BC = {'MUR' 'MUR' 'MUR' 'MUR' 'MUR' 'MUR'};
@@ -145,7 +148,7 @@ end
 % Do post processing as you normaly would with openEMS and Plots
 % ===========================================================================================
 
-freq = linspace(max([1e9, f0-fc]), f0 + fc, 501);
+freq = linspace(max([1e9, f_start]), f_stop, 501);
 
 U = ReadUI({'port_ut1','port_ut2','port_ut3','port_ut4','et'}, [Sim_Path '/'], freq); % time domain/freq domain voltage
 I = ReadUI({'port_it1','port_it2','port_it3','port_it4'}, [Sim_Path '/'], freq); % time domain/freq domain current (half time step is corrected)
